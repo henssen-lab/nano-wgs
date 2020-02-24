@@ -1,0 +1,180 @@
+# /fast/projects/cubit/current/static_data/reference/hg19/ucsc/hg19.fa(.fai/.genome)
+# /fast/projects/cubit/current/static_data/reference/hg38/ucsc/hg38.fa(.fai/.genome)
+
+import os
+import sys
+import pandas as pd
+
+## PARAMETERS
+WORKING_DIR = "/fast/groups/ag_henssen/work/Celine_RMS_Nanopore/"
+EXPS = ["RMS_1", "RMS_2", "RMS_3"]
+SCRIPTS_DIR = "/fast/users/helmsauk_c/work/nano-wgs/"
+REFERENCE_GENOME = "/fast/projects/cubit/current/static_data/reference/hg19/ucsc/hg19.fa"
+REFERENCE_GENOME_NAME = "hg19"
+CHR = ""
+MINIMAP_INDEX = "/fast/users/helmsauk_c/work/resources/hg19.mmi"
+GUPPY_BIN = "/fast/users/helmsauk_c/work/ont-guppy-cpu/bin/"
+CORES = 16
+
+t = pd.DataFrame(columns=['Run', 'Barcode', 'Sample'])
+for e in EXPS:
+        t = pd.merge(t, pd.read_csv(WORKING_DIR + "RawData/" + e + "/" + e + "-Barcodes.tsv"), how="outer")
+t["RunSample"] = t["Run"] + "." + t["Sample"]
+RUNSAMPLE = t["RunSample"].tolist()
+
+rule all:
+    input:
+        expand(WORKING_DIR + "Basecalled/{exp}-basecalled/sequencing_summary.txt", exp=EXPS),
+        expand(WORKING_DIR + "Basecalled/{exp}-basecalled/{exp}-QC/{exp}-NanoPlot-report.html", exp=EXPS),
+        expand(WORKING_DIR + "Basecalled/{exp}-basecalled/{exp}-QC/{exp}-NanoComp-report.html", exp=EXPS),
+        [WORKING_DIR + "Basecalled/{run}-basecalled/demultiplexed/{runsample}.fastq".format(run=row["Run"], runsample=row["RunSample"]) for index, row in t.iterrows()],
+        [WORKING_DIR + "Alignment/{run}-alignment/{runsample}.minimap_hg19.sorted.bam".format(run=row["Run"], runsample=row["RunSample"]) for index, row in t.iterrows()],
+        [WORKING_DIR + "Alignment/{run}-alignment/{runsample}.ngmlr_hg19.sorted.bam".format(run=row["Run"], runsample=row["RunSample"]) for index, row in t.iterrows()],
+        [WORKING_DIR + "Alignment/{run}-alignment/{runsample}.minimap_hg19.sorted.stats.txt".format(run=row["Run"], runsample=row["RunSample"]) for index, row in t.iterrows()],
+        [WORKING_DIR + "Alignment/{run}-alignment/{runsample}.minimap_hg19.sam-samanalysis/stats.txt".format(run=row["Run"], runsample=row["RunSample"]) for index, row in t.iterrows()],
+        [WORKING_DIR + "Alignment/{run}-alignment/{runsample}.ngmlr_hg19.sorted.stats.txt".format(run=row["Run"], runsample=row["RunSample"]) for index, row in t.iterrows()],
+        [WORKING_DIR + "Alignment/{run}-alignment/{runsample}.ngmlr_hg19.sam-samanalysis/stats.txt".format(run=row["Run"], runsample=row["RunSample"]) for index, row in t.iterrows()],
+        [WORKING_DIR + "SV/{run}-sv/{runsample}.ngmlr_hg19.sorted.sniffles.vcf".format(run=row["Run"], runsample=row["RunSample"]) for index, row in t.iterrows()],
+        [WORKING_DIR + "CopyNumber/{run}-copynumber/{runsample}.minimap_hg19.sorted.copynumber.pdf".format(run=row["Run"], runsample=row["RunSample"]) for index, row in t.iterrows()]
+
+rule basecalling:
+    input:
+        # as a dummy input use the first fast5 file that is found in any of the RawData/{dataset} subdirectories
+        lambda wildcards: os.popen("find " + WORKING_DIR + "RawData/{ds} -type f -name *.fast5 | head -n 1".format(ds=wildcards.dataset)).read().strip()
+    output:
+        WORKING_DIR + "Basecalled/{dataset}-basecalled/" + "sequencing_summary.txt",
+        WORKING_DIR + "Basecalled/{dataset}-basecalled/{dataset}-QC/{dataset}-NanoPlot-report.html"
+    params:
+        flowcell = "FLO-MIN106",
+        kit = "SQK-RPB004",
+        ds = lambda wildcards: {wildcards.dataset}
+    run:
+       shell(GUPPY_BIN + "/guppy_basecaller --num_callers 22 --qscore_filtering --min_qscore 10 --input_path " + WORKING_DIR + "RawData/{params.ds}/ --save_path " + WORKING_DIR + "Basecalled/{params.ds}-basecalled/ --flowcell {params.flowcell} --kit {params.kit} --recursive --"),
+       shell("NanoPlot --summary " + WORKING_DIR + "Basecalled/{params.ds}-basecalled/sequencing_summary.txt --loglength --outdir " + WORKING_DIR + "Basecalled/{params.ds}-basecalled/{params.ds}-QC --format pdf --N50 --title {params.ds} --prefix {params.ds}-")
+
+rule demultiplex:
+    input:
+        WORKING_DIR + "Basecalled/{dataset}-basecalled/sequencing_summary.txt"
+    output:
+        WORKING_DIR + "Basecalled/{dataset}-basecalled/demultiplexed/none.fastq"
+    params:
+        ds = "{dataset}",
+        kit = "Auto"
+    run:
+        shell("mkdir "  + WORKING_DIR + "Basecalled/{params.ds}-basecalled/pass_merged/"),
+        shell("cat " + WORKING_DIR + "Basecalled/{params.ds}-basecalled/pass/*.fastq > " + WORKING_DIR + "Basecalled/{params.ds}-basecalled/pass_merged/{params.ds}.fastq"),
+        shell("qcat --trim --kit {params.kit} -f " + WORKING_DIR + "Basecalled/{params.ds}-basecalled/pass_merged/{params.ds}.fastq -b " + WORKING_DIR + "Basecalled/{params.ds}-basecalled/demultiplexed/"),
+        #shell("rm " + WORKING_DIR + "Basecalled/{params.ds}-basecalled/pass/*.fastq"),
+        #shell("rm " + WORKING_DIR + "Basecalled/{params.ds}-basecalled/fail/*.fastq")
+
+rule rename_after_demultiplexing:
+    input:
+        expand(WORKING_DIR + "Basecalled/{run}-basecalled/demultiplexed/none.fastq", run=EXPS)
+    output:
+        temp(expand(WORKING_DIR + "Basecalled/{run}-basecalled/demultiplexed/none.wasRenamed.txt", run=EXPS)),
+        [WORKING_DIR + "Basecalled/{run}-basecalled/demultiplexed/{runsample}.fastq".format(run=row["Run"], runsample=row["RunSample"]) for index, row in t.iterrows()]
+    run:
+        for index, row in t.iterrows():
+            os.rename(WORKING_DIR + "Basecalled/" + str(row["Run"]) + "-basecalled/demultiplexed/" + str(row["Barcode"]) + ".fastq", WORKING_DIR + "Basecalled/" + str(row["Run"]) + "-basecalled/demultiplexed/" + str(row["RunSample"]) + ".fastq")
+            open(WORKING_DIR + "Basecalled/" + str(row["Run"]) + "-basecalled/demultiplexed/" + str(row["Barcode"]) + ".wasRenamed.txt", 'a').close()
+
+rule nanocomp_after_demultiplexing:
+    input:
+        fastqfiles = WORKING_DIR + "Basecalled/{dataset}-basecalled/demultiplexed/none.wasRenamed.txt"
+    output:
+        nanocompreport = WORKING_DIR + "Basecalled/{dataset}-basecalled/{dataset}-QC/{dataset}-NanoComp-report.html"
+    params:
+        ds = "{dataset}"
+    run:
+        shell("NanoComp --fastq " + WORKING_DIR + "Basecalled/{params.ds}-basecalled/demultiplexed/{params.ds}*.fastq --outdir " + WORKING_DIR + "Basecalled/{params.ds}-basecalled/{params.ds}-QC --format pdf --title {params.ds} --prefix {params.ds}-")
+
+rule minimapindexing:
+    input:
+        REFERENCE_GENOME
+    output:
+        MINIMAP_INDEX
+    shell:
+        "minimap2 -d {output} {input}"
+
+rule minimap2genome_sam:
+    input:
+        fastqfile = WORKING_DIR + "Basecalled/{run}-basecalled/demultiplexed/{runsample}.fastq",
+        reference = MINIMAP_INDEX
+    output:
+        temp(WORKING_DIR + "Alignment/{run}-alignment/{runsample}.minimap_" + REFERENCE_GENOME_NAME + ".sam")
+    shell:
+        "minimap2 -ax map-ont {input.reference} {input.fastqfile} > {output}"
+
+# rule minimap2genome_paf:
+#     input:
+#         fastqfile = WORKING_DIR + "Basecalled/{run}-basecalled/demultiplexed/{runsample}.fastq",
+#         reference = MINIMAP_INDEX
+#     output:
+#         temp(WORKING_DIR + "Alignment/{run}-alignment/{runsample}.minimap_" + REFERENCE_GENOME_NAME + "_pafrun.paf")
+#     shell:
+#         "minimap2 -x map-ont --cs=long {input.reference} {input.fastqfile} > {output}"
+
+rule ngmlr2genome:
+    input:
+        fastqfile = WORKING_DIR + "Basecalled/{run}-basecalled/demultiplexed/{runsample}.fastq",
+        reference = REFERENCE_GENOME
+    output:
+        temp(WORKING_DIR + "Alignment/{run}-alignment/{runsample}.ngmlr_" + REFERENCE_GENOME_NAME + ".sam")
+    shell:
+        "ngmlr -r {input.reference} -q {input.fastqfile} -o {output} -x ont"
+
+rule sam2paf:
+    input:
+        WORKING_DIR + "Alignment/{run}-alignment/{alignment}.sam"
+    output:
+        WORKING_DIR + "Alignment/{run}-alignment/{alignment}.paf"
+	shell:
+        SCRIPTS_DIR + "utils/k8-linux " + SCRIPTS_DIR + "utils/sam2paf.js {input} > {output}"
+
+rule getsortedbam:
+    input:
+        WORKING_DIR + "Alignment/{run}-alignment/{alignment}.sam"
+    output:
+        WORKING_DIR + "Alignment/{run}-alignment/{alignment}.sorted.bam"
+    shell:
+        """
+        samtools view -h {input} | samtools sort > {output}
+        samtools index {output}
+        """
+
+rule stats:
+    input:
+        WORKING_DIR + "Alignment/{run}-alignment/{alignment}.sorted{filtered,.*}.bam"
+    output:
+        #idxstats=WORKING_DIR + "Alignment/{run}-alignment/{dataset}.{alignment}.sorted{filtered,.*}.idxstats.txt",
+        stats=WORKING_DIR + "Alignment/{run}-alignment/{alignment}.sorted{filtered,.*}.stats.txt"
+    shell:
+        "samtools stats {input} > {output.stats}"
+
+rule samanalysis_genomic_alignment:
+    input:
+        sam=WORKING_DIR + "Alignment/{run}-alignment/{alignment}.sam",
+        paf=WORKING_DIR + "Alignment/{run}-alignment/{alignment}.paf"
+    output:
+        WORKING_DIR + "Alignment/{run}-alignment/{alignment}.sam-samanalysis/stats.txt"
+    shell:
+        "python samanalysis-genomicalignment.py {input.sam} {input.paf}"
+
+rule sniffles:
+    input:
+        WORKING_DIR + "Alignment/{run}-alignment/{alignment}.sorted.bam"
+    output:
+        WORKING_DIR + "SV/{run}-sv/{alignment}.sorted.sniffles.vcf"
+    shell:
+        "sniffles -m {input} -v {output}"
+
+rule copynumber:
+    input:
+        WORKING_DIR + "Alignment/{run}-alignment/{alignment}.sorted.bam"
+    output:
+        pdf = WORKING_DIR + "CopyNumber/{run}-copynumber/{alignment}.sorted.copynumber.pdf",
+        rdata = WORKING_DIR + "CopyNumber/{run}-copynumber/{alignment}.sorted.copynumber.Rdata"
+    conda:
+        SCRIPTS_DIR + "bioc.yml"
+    shell:
+        "Rscript cnprofile.R {input} {output.pdf} {output.rdata}"
