@@ -82,7 +82,7 @@ rule demultiplex:
 
 rule merge_samples:
     input:
-        lambda wildcards: [WORKING_DIR + "Runs/{run}/{run}_demultiplexed.done".format(run=row.Run) for index, row in metadata[metadata.Sample == wildcards.sample].iterrows()]
+        lambda wildcards: [WORKING_DIR + "RunsQC/{run}-QC/{run}-demux.log".format(run=row.Run) for index, row in metadata[metadata.Sample == wildcards.sample].iterrows()]
     output:
         WORKING_DIR + "Samples/{sample}.fastq.gz"
     params:
@@ -118,7 +118,7 @@ rule stats:
 
 rule nanocomp_samples:
     input:
-        expand(WORKING_DIR + "Samples/{sample}.bam", sample = samples)
+        expand(WORKING_DIR + "Samples/{sample}.ngmlr_hg19.bam", sample = samples)
     output:
         WORKING_DIR + "SamplesQC/" + PROJECT_NAME + "-NanoComp-report.html"
     params:
