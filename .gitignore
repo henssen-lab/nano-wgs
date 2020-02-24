@@ -1,0 +1,3 @@
+.snakemake
+sge_log
+sge_log_dir/
