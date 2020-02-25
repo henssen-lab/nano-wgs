@@ -1,8 +1,9 @@
 # Installation:
 # install guppy manually
 # conda install pandas numpy
-# conda install -c bioconda samtools nanoplotter minimap2 ngmlr sniffles deeptools qcat bioconductor-qdnaseq
+# conda install -c bioconda samtools=1.9 nanoplotter minimap2 ngmlr sniffles deeptools qcat bioconductor-qdnaseq
 # conda env export --from-history > nano-wgs-env.yaml
+# samtools must be of version 1.9! There are issues with long reads and 1.10
 
 import os
 import sys
@@ -11,7 +12,6 @@ import pandas as pd
 # PROJECT INFORMATION
 PROJECT_NAME = "NanoporePipelineTest"
 WORKING_DIR = "/fast/groups/ag_henssen/work/NanoporePipelineTest/"
-metadata = pd.read_csv(WORKING_DIR + "metadata.csv", sep=";", comment="#")
 
 # GENERAL
 GUPPY_BASECALLER = "/fast/users/helmsauk_c/work/ont-guppy-cpu/bin/guppy_basecaller"
@@ -21,6 +21,7 @@ HG19 = "/fast/users/helmsauk_c/scratch/hg19_bwa/hg19.fa" # should but need not b
 # TODO: implement test that each run has exactly one flowcell
 # TODO: implement test that each barcode has one sample for each run
 
+metadata = pd.read_csv(WORKING_DIR + "metadata.csv", sep=";", comment="#")
 runs = list(set(metadata.Run.tolist()))
 samples = list(set(metadata.Sample.tolist()))
 kit_dict = pd.Series(metadata.Kit.values,index=metadata.Run).to_dict()
@@ -37,8 +38,8 @@ rule all:
         expand(WORKING_DIR + "Samples/{sample}.ngmlr_hg19.stats.txt", sample = samples),
         expand(WORKING_DIR + "Samples/{sample}.ngmlr_hg19.sniffles.vcf", sample = samples),
         expand(WORKING_DIR + "Samples/{sample}.ngmlr_hg19.svim.vcf", sample = samples),
-        expand(WORKING_DIR + "Samples/{sample}.ngmlr_hg19.copynumber.pdf", sample = samples),
-        WORKING_DIR + "SamplesQC/" + PROJECT_NAME + "-NanoComp-report.html",
+        #expand(WORKING_DIR + "Samples/{sample}.ngmlr_hg19.copynumber.pdf", sample = samples),
+        #WORKING_DIR + "SamplesQC/" + PROJECT_NAME + "-NanoComp-report.html",
 
 rule basecalling:
     output:
@@ -103,7 +104,7 @@ rule ngmlr:
     shell:
         """
         ngmlr --bam-fix --threads {params.threads} --reference {params.reference} --query {input} --output {params.sam} --presets ont
-        samtools view -h {params.sam} | samtools sort > {output.bam}
+        samtools sort --threads {params.threads} -o {output.bam} {params.sam}
         samtools index {output.bam}
         rm {params.sam}
         """
@@ -164,7 +165,8 @@ rule copynumber:
     output:
         pdf = WORKING_DIR + "Samples/{sample}.ngmlr_hg19.copynumber.pdf",
         rdata = WORKING_DIR + "Samples/{sample}.ngmlr_hg19.copynumber.Rdata"
-    conda:
-        "bioc.yml"
     shell:
         "Rscript cnprofile.R {input} {output.pdf} {output.rdata}"
+
+onsuccess:
+    shell("rm -rf " + WORKING_DIR + "Runs/")
