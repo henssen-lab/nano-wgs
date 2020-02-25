@@ -180,5 +180,3 @@ dependencies:
   - pip:
     - pyqt5-sip==4.19.18
     - pyqtwebengine==5.12.1
-prefix: /fast/users/helmsauk_c/work/miniconda/envs/nano-wgs-env
-
