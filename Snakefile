@@ -38,8 +38,8 @@ rule all:
         expand(WORKING_DIR + "Samples/{sample}.ngmlr_hg19.stats.txt", sample = samples),
         expand(WORKING_DIR + "Samples/{sample}.ngmlr_hg19.sniffles.vcf", sample = samples),
         expand(WORKING_DIR + "Samples/{sample}.ngmlr_hg19.svim.vcf", sample = samples),
-        #expand(WORKING_DIR + "Samples/{sample}.ngmlr_hg19.copynumber.pdf", sample = samples),
-        #WORKING_DIR + "SamplesQC/" + PROJECT_NAME + "-NanoComp-report.html",
+        expand(WORKING_DIR + "Samples/{sample}.ngmlr_hg19.copynumber.pdf", sample = samples),
+        WORKING_DIR + "SamplesQC/" + PROJECT_NAME + "-NanoComp-report.html",
 
 rule basecalling:
     output:
