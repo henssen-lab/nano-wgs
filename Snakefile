@@ -1,7 +1,7 @@
 # Installation:
 # install guppy manually
 # conda install pandas numpy
-# conda install -c bioconda samtools=1.9 nanoplotter minimap2 ngmlr sniffles deeptools qcat bioconductor-qdnaseq
+# conda install -c bioconda samtools=1.9 nanoplotter minimap2 ngmlr sniffles deeptools qcat bioconductor-qdnaseq bioconductor-qdnaseq.hg19
 # conda env export --from-history > nano-wgs-env.yaml
 # samtools must be of version 1.9! There are issues with long reads and 1.10
 

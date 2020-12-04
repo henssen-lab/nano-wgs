@@ -26,6 +26,7 @@ dependencies:
   - bioconductor-limma=3.42.0=r36h516909a_0
   - bioconductor-marray=1.64.0=r36_0
   - bioconductor-qdnaseq=1.22.0=r36_0
+  - bioconductor-qdnaseq.hg19=1.16.0=r36_0
   - bioconductor-rhtslib=1.18.0=r36hdb70ac9_1
   - bioconductor-rsamtools=2.2.0=r36he1b5a44_0
   - bioconductor-s4vectors=0.24.0=r36h516909a_0

@@ -1,0 +1,17 @@
+__default__:
+    cpus-per-task: '12'
+    mem-per-cpu: '4000'
+    time: '48:00'
+    partition: 'medium'
+
+basecalling:
+    cpus-per-task: '24'
+    mem-per-cpu: '4000'
+    time: '96:00'
+    partition: 'medium'
+
+ngmlr:
+    cpus-per-task: '24'
+    mem-per-cpu: '4000'
+    time: '72:00'
+    partition: 'medium'
