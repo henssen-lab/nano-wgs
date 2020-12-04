@@ -60,5 +60,5 @@ Once this is set up, you are ready to go:
 ```
 cd <PATH TO>/nano-wgs/
 conda activate nano-wgs-env
-qsub nano-wgs.snakejob.sh
+sbatch nano-wgs.snakejob.sh
 ```

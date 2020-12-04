@@ -10,12 +10,12 @@ import sys
 import pandas as pd
 
 # PROJECT INFORMATION
-PROJECT_NAME = "NanoporePipelineTest"
-WORKING_DIR = "/fast/groups/ag_henssen/work/NanoporePipelineTest/"
+PROJECT_NAME = "BER05_NanoporeCircleSeq"
+WORKING_DIR = "/fast/groups/ag_henssen/work/Kons_Nanopore_circleseq_BER05pool/"
 
 # GENERAL
 GUPPY_BASECALLER = "/fast/users/helmsauk_c/work/ont-guppy-cpu/bin/guppy_basecaller"
-HG19 = "/fast/users/helmsauk_c/scratch/hg19_bwa/hg19.fa" # should but need not be a writable directory
+HG19 = "/fast/users/helmsauk_c/work/resources/hg19_bwa/hg19.fa" # should but need not be a writable directory
 
 # TODO: implement test that each run has exactly one kit
 # TODO: implement test that each run has exactly one flowcell
