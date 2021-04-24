@@ -1,5 +1,8 @@
 .snakemake
 log.txt
-slurm-*
+slurm*
+slurm.log
+slurm.error
 sge_log
 sge_log_dir/
+
