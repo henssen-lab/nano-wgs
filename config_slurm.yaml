@@ -10,8 +10,14 @@ basecalling:
     time: '96:00'
     partition: 'medium'
 
+demultiplex:
+    cpus-per-task: '24'
+    mem-per-cpu: '4000'
+    time: '96:00'
+    partition: 'medium'
+
 ngmlr:
     cpus-per-task: '24'
     mem-per-cpu: '4000'
-    time: '72:00'
+    time: '96:00'
     partition: 'medium'

@@ -10,8 +10,10 @@ import sys
 import pandas as pd
 
 # PROJECT INFORMATION
-PROJECT_NAME = "BER05_NanoporeCircleSeq"
-WORKING_DIR = "/fast/groups/ag_henssen/work/Kons_Nanopore_circleseq_BER05pool/"
+#PROJECT_NAME = "BER05_NanoporeCircleSeq"
+#WORKING_DIR = "/fast/groups/ag_henssen/work/Kons_Nanopore_circleseq_BER05pool/"
+PROJECT_NAME = "CellLinesDeepNanopore"
+WORKING_DIR = "/fast/projects/Schulte_NB/work/Henssen_CellLine_Nanopore_April2021/"
 
 # GENERAL
 GUPPY_BASECALLER = "/fast/users/helmsauk_c/work/ont-guppy-cpu/bin/guppy_basecaller"
@@ -43,9 +45,9 @@ rule all:
 
 rule basecalling:
     output:
-        temp(WORKING_DIR + "Runs/{run}/{run}.fastq"),
-        temp(WORKING_DIR + "Runs/{run}/sequencing_summary.txt"),
-        temp(WORKING_DIR + "Runs/{run}/sequencing_telemetry.js")
+        WORKING_DIR + "Runs/{run}/{run}.fastq",
+        WORKING_DIR + "Runs/{run}/sequencing_summary.txt",
+        WORKING_DIR + "Runs/{run}/sequencing_telemetry.js"
     params:
         working_dir = WORKING_DIR,
         output_dir = WORKING_DIR + "Runs/{run}/",
@@ -78,8 +80,8 @@ rule demultiplex:
         shell("qcat --trim --detect-middle --kit Auto --fastq {input} --barcode_dir {params.output_dir} 2> {output.log_file}")
         for index, row in metadata[metadata.Run == params.run].iterrows():
             shell("gzip -c {params.output_dir}" + str(row["Barcode"]) + ".fastq > {params.output_dir}" + str(row["Sample"]) + ".fastq.gz")
-        shell("rm -f {params.output_dir}barcode*.fastq")
-        shell("rm -f {params.output_dir}none.fastq")
+        #shell("rm -f {params.output_dir}barcode*.fastq")
+        #shell("rm -f {params.output_dir}none.fastq")
 
 rule merge_samples:
     input:
@@ -89,7 +91,7 @@ rule merge_samples:
     params:
         files = lambda wildcards: [WORKING_DIR + "Runs/{run}/{sample}.fastq.gz".format(run=row.Run, sample=row.Sample) for index, row in metadata[metadata.Sample == wildcards.sample].iterrows()]
     shell:
-        "cat {params.files} > {output} && rm {params.files}"
+        "cat {params.files} > {output}" # && rm {params.files}"
 
 rule ngmlr:
     input:
@@ -135,7 +137,7 @@ rule sniffles:
     output:
         WORKING_DIR + "Samples/{sample}.ngmlr_hg19.sniffles.vcf"
     shell:
-         "sniffles -m {input} -v {output}"
+         "sniffles -m {input} -v {output} --min_length 15 --genotype --min-support 3 --report-seq"
 
 rule svim:
     input:
