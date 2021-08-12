@@ -1,0 +1,9 @@
+ 
+PROJECT_NAME : "CellLinesDeepNanopore"
+WORKING_DIR : "/fast/projects/Schulte_NB/work/Henssen_CellLine_Nanopore_April2021/"
+
+# GENERAL
+# GUPPY_BASECALLER : "/fast/users/helmsauk_c/work/ont-guppy-cpu/bin/guppy_basecaller"
+
+# should but need not be a writable directory
+HG19 : "/fast/users/helmsauk_c/work/resources/hg19_bwa/hg19.fa" 

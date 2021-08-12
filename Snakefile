@@ -1,33 +1,28 @@
-# Installation:
-# install guppy manually
-# conda install pandas numpy
-# conda install -c bioconda samtools=1.9 nanoplotter minimap2 ngmlr sniffles deeptools qcat bioconductor-qdnaseq bioconductor-qdnaseq.hg19
-# conda env export --from-history > nano-wgs-env.yaml
-# samtools must be of version 1.9! There are issues with long reads and 1.10
-
 import os
 import sys
 import pandas as pd
 
-# PROJECT INFORMATION
-#PROJECT_NAME = "BER05_NanoporeCircleSeq"
-#WORKING_DIR = "/fast/groups/ag_henssen/work/Kons_Nanopore_circleseq_BER05pool/"
-PROJECT_NAME = "CellLinesDeepNanopore"
-WORKING_DIR = "/fast/projects/Schulte_NB/work/Henssen_CellLine_Nanopore_April2021/"
+configfile: "config_run.yaml"
+
+PROJECT_NAME = config['PROJECT_NAME']
+WORKING_DIR = config['WORKING_DIR']
 
 # GENERAL
-GUPPY_BASECALLER = "/fast/users/helmsauk_c/work/ont-guppy-cpu/bin/guppy_basecaller"
-HG19 = "/fast/users/helmsauk_c/work/resources/hg19_bwa/hg19.fa" # should but need not be a writable directory
+# GUPPY_BASECALLER = "/fast/users/helmsauk_c/work/ont-guppy-cpu/bin/guppy_basecaller"
+HG19 = config['HG19']
+HG38 = config['HG38']
 
-# TODO: implement test that each run has exactly one kit
-# TODO: implement test that each run has exactly one flowcell
-# TODO: implement test that each barcode has one sample for each run
+MULTISAMPLE = config['MULTISAMPLE']
 
-metadata = pd.read_csv(WORKING_DIR + "metadata.csv", sep=";", comment="#")
-runs = list(set(metadata.Run.tolist()))
-samples = list(set(metadata.Sample.tolist()))
-kit_dict = pd.Series(metadata.Kit.values,index=metadata.Run).to_dict()
-flowcell_dict = pd.Series(metadata.Flowcell.values,index=metadata.Run).to_dict()
+if MULTISAMPLE == True:
+    metadata = pd.read_csv(WORKING_DIR + "metadata.csv", sep=";", comment="#")
+    runs = list(set(metadata.Run.tolist()))
+    samples = list(set(metadata.Sample.tolist()))
+    kit_dict = pd.Series(metadata.Kit.values,index=metadata.Run).to_dict()
+    flowcell_dict = pd.Series(metadata.Flowcell.values,index=metadata.Run).to_dict()
+else:
+    runs = [config['RUN']]
+    samples = [config['SAMPLE']]
 
 rule all:
     input:
@@ -43,19 +38,19 @@ rule all:
         #expand(WORKING_DIR + "Samples/{sample}.ngmlr_hg19.copynumber.pdf", sample = samples),
         WORKING_DIR + "SamplesQC/" + PROJECT_NAME + "-NanoComp-report.html",
 
-rule basecalling:
-    output:
-        WORKING_DIR + "Runs/{run}/{run}.fastq",
-        WORKING_DIR + "Runs/{run}/sequencing_summary.txt",
-        WORKING_DIR + "Runs/{run}/sequencing_telemetry.js"
-    params:
-        working_dir = WORKING_DIR,
-        output_dir = WORKING_DIR + "Runs/{run}/",
-        run = "{run}",
-        kit = lambda wildcards: kit_dict[wildcards.run],
-        flowcell = lambda wildcards: flowcell_dict[wildcards.run]
-    shell:
-       GUPPY_BASECALLER + " --num_callers 24 --input_path {params.working_dir}RawData/{params.run}/ --save_path {params.output_dir} --flowcell {params.flowcell} --kit {params.kit} --recursive -- && cat {params.output_dir}*.fastq > {params.output_dir}{params.run}.fastq && rm {params.output_dir}fastq_runid*.fastq && rm {params.output_dir}*.log"
+# rule basecalling:
+#     output:
+#         WORKING_DIR + "Runs/{run}/{run}.fastq",
+#         WORKING_DIR + "Runs/{run}/sequencing_summary.txt",
+#         WORKING_DIR + "Runs/{run}/sequencing_telemetry.js"
+#     params:
+#         working_dir = WORKING_DIR,
+#         output_dir = WORKING_DIR + "Runs/{run}/",
+#         run = "{run}",
+#         kit = lambda wildcards: kit_dict[wildcards.run],
+#         flowcell = lambda wildcards: flowcell_dict[wildcards.run]
+#     shell:
+#        GUPPY_BASECALLER + " --num_callers 24 --input_path {params.working_dir}RawData/{params.run}/ --save_path {params.output_dir} --flowcell {params.flowcell} --kit {params.kit} --recursive -- && cat {params.output_dir}*.fastq > {params.output_dir}{params.run}.fastq && rm {params.output_dir}fastq_runid*.fastq && rm {params.output_dir}*.log"
 
 rule nanoplot:
     input:
