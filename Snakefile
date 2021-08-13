@@ -23,84 +23,57 @@ if MULTISAMPLE == True:
 else:
     runs = [config['RUN']]
     samples = [config['SAMPLE']]
+    summary = [config['SEQ_SUMMARY']]
+
+os.chdir(os.path.join(WORKING_DIR, PROJECT_NAME, "Process"))
 
 rule all:
     input:
-        expand(WORKING_DIR + "RunsQC/{run}-QC/{run}-NanoPlot-report.html", run = runs),
-        expand(WORKING_DIR + "RunsQC/{run}-QC/{run}-demux.log", run = runs),
-        expand(WORKING_DIR + "Samples/{sample}.fastq.gz", sample = samples),
-        expand(WORKING_DIR + "Samples/{sample}.ngmlr_hg19.bam", sample = samples),
-        expand(WORKING_DIR + "Samples/{sample}.ngmlr_hg19.bam.bai", sample = samples),
-        expand(WORKING_DIR + "Samples/{sample}.ngmlr_hg19.bw", sample = samples),
-        expand(WORKING_DIR + "Samples/{sample}.ngmlr_hg19.stats.txt", sample = samples),
-        expand(WORKING_DIR + "Samples/{sample}.ngmlr_hg19.sniffles.vcf", sample = samples),
-        expand(WORKING_DIR + "Samples/{sample}.ngmlr_hg19.svim.vcf", sample = samples),
-        #expand(WORKING_DIR + "Samples/{sample}.ngmlr_hg19.copynumber.pdf", sample = samples),
-        WORKING_DIR + "SamplesQC/" + PROJECT_NAME + "-NanoComp-report.html",
+        expand("{run}", run=runs)
+        expand("{sample}/QC/NanoPlot-report.html"), sample = samples),
+        expand("{sample}/ngmlr_hg19.bam"), sample = samples),
+        expand("{sample}/ngmlr_hg19.bam.bai"), sample = samples),
+        expand("{sample}/ngmlr_hg19.sniffles.vcf"), sample = samples),
+        expand("{sample}/ngmlr_hg19.svim.vcf"), sample = samples),
+        expand("{sample}/ngmlr_hg38.bam"), sample = samples),
+        expand("{sample}/ngmlr_hg38.bam.bai"), sample = samples),
+        expand("{sample}/ngmlr_hg38.sniffles.vcf"), sample = samples),
+        expand("{sample}/ngmlr_hg38.svim.vcf"), sample = samples)
+        # expand(os.path.join(WORKING_DIR, PROJECT_NAME, "Process", "{sample}", "QC", "NanoPlot-report.html"), sample = samples),
 
-# rule basecalling:
-#     output:
-#         WORKING_DIR + "Runs/{run}/{run}.fastq",
-#         WORKING_DIR + "Runs/{run}/sequencing_summary.txt",
-#         WORKING_DIR + "Runs/{run}/sequencing_telemetry.js"
-#     params:
-#         working_dir = WORKING_DIR,
-#         output_dir = WORKING_DIR + "Runs/{run}/",
-#         run = "{run}",
-#         kit = lambda wildcards: kit_dict[wildcards.run],
-#         flowcell = lambda wildcards: flowcell_dict[wildcards.run]
-#     shell:
-#        GUPPY_BASECALLER + " --num_callers 24 --input_path {params.working_dir}RawData/{params.run}/ --save_path {params.output_dir} --flowcell {params.flowcell} --kit {params.kit} --recursive -- && cat {params.output_dir}*.fastq > {params.output_dir}{params.run}.fastq && rm {params.output_dir}fastq_runid*.fastq && rm {params.output_dir}*.log"
 
 rule nanoplot:
     input:
-        WORKING_DIR + "Runs/{run}/sequencing_summary.txt"
+        "{run}/sequencing_summary.txt"
     output:
-        WORKING_DIR + "RunsQC/{run}-QC/{run}-NanoPlot-report.html"
+        "{sample}/QC/NanoPlot-report.html"
     params:
-        run = "{run}",
-        output_dir = WORKING_DIR + "RunsQC/{run}-QC",
+        sample = "{sample}",
+        output_dir = WORKING_DIR + "/" + PROJECT_NAME + "/Proces/" +  "{sample}" +  "/QC",
     shell:
-        "NanoPlot --summary {input} --loglength --outdir {params.output_dir} --format pdf --N50 --title {params.run} --prefix {params.run}-"
+        "NanoPlot --summary {input} --outdir {params.output_dir} --N50 --title {params.sample}"
 
-rule demultiplex:
+rule nanfilt:
     input:
-        WORKING_DIR + "Runs/{run}/{run}.fastq"
+        fastqin="{run}/all.fastq"
     output:
-        log_file = WORKING_DIR + "RunsQC/{run}-QC/{run}-demux.log"
-    params:
-        run = "{run}",
-        output_dir = WORKING_DIR + "Runs/{run}/"
-    run:
-        shell("qcat --trim --detect-middle --kit Auto --fastq {input} --barcode_dir {params.output_dir} 2> {output.log_file}")
-        for index, row in metadata[metadata.Run == params.run].iterrows():
-            shell("gzip -c {params.output_dir}" + str(row["Barcode"]) + ".fastq > {params.output_dir}" + str(row["Sample"]) + ".fastq.gz")
-        #shell("rm -f {params.output_dir}barcode*.fastq")
-        #shell("rm -f {params.output_dir}none.fastq")
-
-rule merge_samples:
-    input:
-        lambda wildcards: [WORKING_DIR + "RunsQC/{run}-QC/{run}-demux.log".format(run=row.Run) for index, row in metadata[metadata.Sample == wildcards.sample].iterrows()]
-    output:
-        WORKING_DIR + "Samples/{sample}.fastq.gz"
-    params:
-        files = lambda wildcards: [WORKING_DIR + "Runs/{run}/{sample}.fastq.gz".format(run=row.Run, sample=row.Sample) for index, row in metadata[metadata.Sample == wildcards.sample].iterrows()]
+        fastqout = temp("all.fastq")
     shell:
-        "cat {params.files} > {output}" # && rm {params.files}"
+        "NanoFilt -l 1000 --headcrop 50 --tailcrop 50 --readtype 1D {input.fastqin} > {output.fastqout}"
 
 rule ngmlr:
     input:
-        WORKING_DIR + "Samples/{sample}.fastq.gz"
+        fastq="{run}/all.fastq"
+        reference=expand("{ref}", ref=[HG19, HG38])
     output:
-        bam = WORKING_DIR + "Samples/{sample}.ngmlr_hg19.bam",
-        bai = WORKING_DIR + "Samples/{sample}.ngmlr_hg19.bam.bai"
+        bam = expand("{sample}/ngmlr_{refid}.bam", refid=['hg19', 'hg38']),
+        bai = expand("{sample}/ngmlr_{refid}.bam.bai", refid=['hg19', 'hg38']),
+        sam = temp(expand("{sample}/ngmlr_{refid}.sam", refid=['hg19', 'hg38']))
     params:
-        sam = WORKING_DIR + "Samples/{sample}.ngmlr_hg19.sam",
-        reference = HG19,
         threads = 24
     shell:
         """
-        ngmlr --bam-fix --threads {params.threads} --reference {params.reference} --query {input} --output {params.sam} --presets ont
+        ngmlr --bam-fix --threads {params.threads} --reference {input.reference} --query {input.fastq} --output {output.sam} --presets ont
         samtools sort --threads {params.threads} -o {output.bam} {params.sam}
         samtools index {output.bam}
         rm {params.sam}

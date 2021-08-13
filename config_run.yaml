@@ -1,9 +1,14 @@
  
-PROJECT_NAME : "CellLinesDeepNanopore"
-WORKING_DIR : "/fast/projects/Schulte_NB/work/Henssen_CellLine_Nanopore_April2021/"
+PROJECT_NAME : "Evolution"
+WORKING_DIR : "/fast/projects/NB_CircleSeq/work/CircleSeq_data/CircleSeq/Nanopore"
 
 # GENERAL
 # GUPPY_BASECALLER : "/fast/users/helmsauk_c/work/ont-guppy-cpu/bin/guppy_basecaller"
 
 # should but need not be a writable directory
-HG19 : "/fast/users/helmsauk_c/work/resources/hg19_bwa/hg19.fa" 
+HG19 : "/fast/users/giurgium_c/work/assembly/SV/reference/GRCh37.p13.genome.fa" 
+HG38:  "/fast/users/giurgium_c/work/assembly/SV/reference/GRCh38.p13.genome.fa" 
+
+MULTISAMPLE: False
+RUN: "/fast/projects/NB_CircleSeq/work/CircleSeq_data/CircleSeq/Nanopore/Evolution/RawData/CB1058-initial_19072021/CB1058-initial"
+SAMPLE: "CB1058-initial_19072021"
