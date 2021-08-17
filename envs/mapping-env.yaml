@@ -7,12 +7,14 @@ dependencies:
   - _libgcc_mutex=0.1
   - _openmp_mutex=4.5
   - bcftools=1.9
-  - biopython=1.68
   - blas=1.1
   - bzip2=1.0.8
+  - bwidget=1.9
   - ca-certificates=2021.5.30
   - certifi=2018.8.24
   - curl=7.64.0
+  - deeptools=3.3.2
+  - deeptoolsintervals=0.1.9
   - deprecated=1.2.12
   - freetype=2.10.4
   - htslib=1.9

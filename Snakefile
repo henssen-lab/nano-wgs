@@ -40,6 +40,9 @@ rule all:
                 "Process/{sample}/{refid}/ngmlr_{refid}.bam",
                 "Process/{sample}/{refid}/ngmlr_{refid}.bam.bai",
                 "Process/{sample}/{refid}/ngmlr_{refid}.stats.txt",
+                "Process/{sample}/{refid}/ngmlr_{refid}.sniffles.vcf",
+                "Process/{sample}/{refid}/ngmlr_{refid}.svim.vcf",
+                "Process/{sample}/{refid}/coverage_{refid}.bw"
                 ], sample=samples, refid=[HG19, HG38]),
         # expand("Process/{sample}/QC/NanoPlot-report.html", sample=samples)
         # expand("{run}/alltemp.fastq", run=[run]),
@@ -114,6 +117,8 @@ rule ngmlr_mock:
     output:
         # outf = directory(expand("Process/{sample}/{refid}/", sample=["{sample}"], refid=[HG19, HG38])),
         outtemp = expand("Process/{sample}/{refid}/temp", sample=["{sample}"], refid=[HG19, HG38])
+    resources:
+        tmpdir = TMP_DIR
     conda:
         "envs/mapping-env.yaml"
     shell:
@@ -128,6 +133,8 @@ rule ngmlr:
         bam = protected("Process/{sample}/{refid}/ngmlr_{refid}.bam"),
         bai = protected("Process/{sample}/{refid}/ngmlr_{refid}.bam.bai"),
         sam = temp("Process/{sample}/{refid}/ngmlr_{refid}.sam")
+    resources:
+        tmpdir = TMP_DIR
     conda:
         "envs/mapping-env.yaml"
     params:
@@ -139,12 +146,29 @@ rule ngmlr:
         samtools index {output.bam}
         """
 
+rule coverage:
+    input:
+        bam="Process/{sample}/{refid}/ngmlr_{refid}.bam",
+        bai="Process/{sample}/{refid}/ngmlr_{refid}.bam.bai"
+    output:
+        protected("Process/{sample}/{refid}/coverage_{refid}.bw")
+    resources:
+        tmpdir = TMP_DIR
+    conda:
+        "envs/mapping-env.yaml"
+    params:
+        threads = 32
+    shell:
+        "bamCoverage --bam {input.bam} -o {output} --binSize 50 -p {params.threads}"
+
 rule stats:
     input:
         bam="Process/{sample}/{refid}/ngmlr_{refid}.bam",
         bai="Process/{sample}/{refid}/ngmlr_{refid}.bam.bai"
     output:
         "Process/{sample}/{refid}/ngmlr_{refid}.stats.txt"
+    resources:
+        tmpdir = TMP_DIR
     conda:
         "envs/mapping-env.yaml"
     shell:
@@ -155,7 +179,9 @@ rule sniffles:
         bam="Process/{sample}/{refid}/ngmlr_{refid}.bam",
         bai="Process/{sample}/{refid}/ngmlr_{refid}.bam.bai"
     output:
-        "Process/{sample}/{refid}/ngmlr_{refid}.sniffles.vcf"
+        protected("Process/{sample}/{refid}/ngmlr_{refid}.sniffles.vcf")
+    resources:
+        tmpdir = TMP_DIR
     conda:
         "envs/snv-env.yaml"
     params:
@@ -163,29 +189,23 @@ rule sniffles:
     shell:
          "sniffles -t {params.threads} -m {input.bam} -v {output} --min_homo_af 0.7 --min_het_af 0.1 --min_length 500 --cluster --genotype --min-support 4 --report-seq"
 
-# rule svim:
-#     input:
-#         bam="{sample}/ngmlr_{refid}.bam",
-#         bai="{sample}/ngmlr_{refid}.bam.bai",
-#         reference="{ref}"
-#     output:
-#         "{sample}/ngmlr_{refid}.svim.vcf"
-#     params:
-#         svim_output_dir = "{sample}-svim/",
-#         sample = "{sample}"
-#     shell:
-#          "svim alignment --read_names --insertion_sequences --sample {params.sample} {params.svim_output_dir} {input.bam} {input.reference} && mv {params.svim_output_dir}variants.vcf {output}"
+rule svim:
+    input:
+        bam="Process/{sample}/{refid}/ngmlr_{refid}.bam",
+        bai="Process/{sample}/{refid}/ngmlr_{refid}.bam.bai",
+        reference=get_reference
+    output:
+        protected("Process/{sample}/{refid}/ngmlr_{refid}.svim.vcf")
+    resources:
+        tmpdir = TMP_DIR
+    conda:
+        "envs/snv-env.yaml"
+    params:
+        svim_output_dir = "Process/{sample}/{refid}/svim/",
+        sample = "{sample}"
+    shell:
+         "svim alignment --read_names --insertion_sequences --sample {params.sample} {params.svim_output_dir} {input.bam} {input.reference} && mv {params.svim_output_dir}variants.vcf {output}"
 
-# rule coverage:
-#     input:
-#         bam="{sample}/ngmlr_{refid}.bam",
-#         bai="{sample}/ngmlr_{refid}.bam.bai"
-#     output:
-#         "{sample}.ngmlr_{refid}.bw"
-#     params:
-#         threads = 32
-#     shell:
-#         "bamCoverage --bam {input.bam} -o {output} --binSize 20 -p {params.threads}"
 
 # rule copynumber:
 #     input:
