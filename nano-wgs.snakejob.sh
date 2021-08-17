@@ -7,7 +7,6 @@
 #SBATCH --mem-per-cpu=1000M
 #SBATCH -p medium
 #SBATCH --output=slurm-log.txt
-#SBATCH --mail-user=konstantin.helmsauer@charite.de
 
 mkdir -p slurm-out && rm -r slurm-out && mkdir -p slurm-out
 set -x

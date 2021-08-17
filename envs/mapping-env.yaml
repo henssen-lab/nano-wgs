@@ -1,4 +1,4 @@
-name: mapping-env
+name: mapping-env-test
 channels:
   - conda-forge
   - bioconda
@@ -45,7 +45,6 @@ dependencies:
   - pillow=5.3.0
   - pip=20.3.4
   - pysam=0.15.2
-  - python=3.5.5
   - python-dateutil=2.8.1
   - pytz=2021.1
   - readline=7.0

@@ -1,6 +1,9 @@
 import os
 import sys
 import pandas as pd
+from snakemake.utils import min_version 
+
+min_version("6.4.1")
 
 configfile: "config_run.yaml"
 
@@ -12,6 +15,7 @@ PROJECT_NAME = config['project_name']
 WORKING_DIR = config['working_dir']
 METADATA_FILE = config['metafile']
 TMP_DIR = config['tmp_dir']
+HEADER_SUM = os.path.join(os.getcwd(), "envs/header_summary.txt")
 
 metadata = pd.read_csv(METADATA_FILE, sep="\t", header=0)
 runs = list(set(metadata.Run.tolist()))
@@ -20,13 +24,23 @@ kit_dict = pd.Series(metadata.Kit.values,index=metadata.Run).to_dict()
 flowcell_dict = pd.Series(metadata.Flowcell.values,index=metadata.Run).to_dict()
 
 os.chdir(os.path.join(WORKING_DIR, PROJECT_NAME))
-print(os.getcwd())
 
+def get_reference(wildcards):
+    """
+    Get reference genome
+    """
+    if wildcards.refid == HG19:
+        return config[REFERENCE][HG19]
+    return config[REFERENCE][HG38]
 
 rule all:
     input:
         expand(["Process/{sample}/QC/NanoPlot-report.html",
-                "Process/{sample}/filt.fastq"], sample=samples),
+                "Process/{sample}/filt.fastq",
+                "Process/{sample}/{refid}/ngmlr_{refid}.bam",
+                "Process/{sample}/{refid}/ngmlr_{refid}.bam.bai",
+                "Process/{sample}/{refid}/ngmlr_{refid}.stats.txt",
+                ], sample=samples, refid=[HG19, HG38]),
         # expand("Process/{sample}/QC/NanoPlot-report.html", sample=samples)
         # expand("{run}/alltemp.fastq", run=[run]),
         # sample + "/QC/NanoPlot-report.html",
@@ -46,7 +60,7 @@ rule merge_fastq:
     input:
         fastq = lambda wildcards: ["{run}/pass".format(run=row.Run) for index, row in metadata[metadata.Sample == wildcards.sample].iterrows()],
     output:
-        allfastq = "Process/{sample}/all.fastq",
+        allfastq = temp("Process/{sample}/all.fastq"),
     resources:
         tmpdir = TMP_DIR
     shell:
@@ -56,12 +70,14 @@ rule merge_summary:
     input:
         sumfiles = lambda wildcards: ["{run}/sequencing_summary.txt".format(run=row.Run) for index, row in metadata[metadata.Sample == wildcards.sample].iterrows()],
     output:
-        seqsum = "Process/{sample}/sequencing_summary.txt"
+        seqsum = temp("Process/{sample}/sequencing_summary.txt")
     resources:
         tmpdir = TMP_DIR
+    params:
+        shead = HEADER_SUM
     shell:
-        """head -1 {input.sumfiles} | head -1 > {output.seqsum} && \
-           tail -n+2 {input.sumfiles} >> {output.seqsum}"""
+        """cat {params.shead} > {output.seqsum} && \
+           cat {input.sumfiles} | grep -v "passes_filtering" >> {output.seqsum}"""
 
 rule nanoplot:
     input:
@@ -70,6 +86,8 @@ rule nanoplot:
         report = "Process/{sample}/QC/NanoPlot-report.html"
     resources:
         tmpdir = TMP_DIR
+    conda:
+        "envs/qc-env.yaml"
     params:
         sample = "{sample}",
         output_dir = "Process/{sample}/QC",
@@ -80,52 +98,70 @@ rule nanfilt:
     input:
         fastqin = "Process/{sample}/all.fastq"
     output:
-        fastqout = "Process/{sample}/filt.fastq"
+        fastqout = temp("Process/{sample}/filt.fastq")
     resources:
         tmpdir=TMP_DIR
+    conda:
+        "envs/mapping-env.yaml"
     params:
         rlen = config['read_length']
     shell:
         "NanoFilt -l {params.rlen} --headcrop 50 --tailcrop 50 --readtype 1D {input.fastqin} > {output.fastqout}"
 
-# rule ngmlr:
-#     input:
-#         fastq=run + "/alltemp.fastq",
-#         reference=[config[REFERENCE][HG19], config[REFERENCE][HG38]],
-#         refid=lambda wildcards: [HG19, HG38],
-#         sample=lambda wildcards: sample
-#     output:
-#         bam = protected("{sample}/ngmlr_{refid}.bam"),
-#         bai = protected("{sample}/ngmlr_{refid}.bam.bai"),
-#         sam = temp("{sample}/ngmlr_{refid}.sam")
-#     params:
-#         threads = 32
-#     shell:
-#         """
-#         ngmlr --bam-fix --threads {params.threads} --reference {input.reference} --query {input.fastq} --output {output.sam} --presets ont
-#         samtools sort -O BAM -o {output.bam} {params.sam}
-#         samtools index {output.bam}
-#         """
+rule ngmlr_mock:
+    input:
+        "Process/{sample}/filt.fastq"
+    output:
+        # outf = directory(expand("Process/{sample}/{refid}/", sample=["{sample}"], refid=[HG19, HG38])),
+        outtemp = expand("Process/{sample}/{refid}/temp", sample=["{sample}"], refid=[HG19, HG38])
+    conda:
+        "envs/mapping-env.yaml"
+    shell:
+        "touch {output.outtemp}"
 
-# rule stats:
-#     input:
-#         bam="{sample}/ngmlr_{refid}.bam",
-#         bai="{sample}/ngmlr_{refid}.bam.bai"
-#     output:
-#         "{sample}/ngmlr_{refid}.stats.txt"
-#     shell:
-#         "samtools stats {input.bam} > {output}"
+rule ngmlr:
+    input:
+        fastq = "Process/{sample}/filt.fastq",
+        reference = get_reference,
+        ftemp = "Process/{sample}/{refid}/temp"
+    output:
+        bam = protected("Process/{sample}/{refid}/ngmlr_{refid}.bam"),
+        bai = protected("Process/{sample}/{refid}/ngmlr_{refid}.bam.bai"),
+        sam = temp("Process/{sample}/{refid}/ngmlr_{refid}.sam")
+    conda:
+        "envs/mapping-env.yaml"
+    params:
+        threads = 32
+    shell:
+        """
+        ngmlr --bam-fix --threads {params.threads} --reference {input.reference} --query {input.fastq} --output {output.sam} --presets ont
+        samtools sort -O BAM -o {output.bam} {output.sam}
+        samtools index {output.bam}
+        """
 
-# rule sniffles:
-#     input:
-#         bam="{sample}/ngmlr_{refid}.bam",
-#         bai="{sample}/ngmlr_{refid}.bam.bai"
-#     output:
-#         "{sample}/ngmlr_{refid}.sniffles.vcf"
-#     params:
-#         threads = 32
-#     shell:
-#          "sniffles -t {params.threads} -m {input.bam} -v {output} --min_homo_af 0.7 --min_het_af 0.1 --min_length 500 --cluster --genotype --min-support 4 --report-seq"
+rule stats:
+    input:
+        bam="Process/{sample}/{refid}/ngmlr_{refid}.bam",
+        bai="Process/{sample}/{refid}/ngmlr_{refid}.bam.bai"
+    output:
+        "Process/{sample}/{refid}/ngmlr_{refid}.stats.txt"
+    conda:
+        "envs/mapping-env.yaml"
+    shell:
+        "samtools stats {input.bam} > {output}"
+
+rule sniffles:
+    input:
+        bam="Process/{sample}/{refid}/ngmlr_{refid}.bam",
+        bai="Process/{sample}/{refid}/ngmlr_{refid}.bam.bai"
+    output:
+        "Process/{sample}/{refid}/ngmlr_{refid}.sniffles.vcf"
+    conda:
+        "envs/snv-env.yaml"
+    params:
+        threads = 32
+    shell:
+         "sniffles -t {params.threads} -m {input.bam} -v {output} --min_homo_af 0.7 --min_het_af 0.1 --min_length 500 --cluster --genotype --min-support 4 --report-seq"
 
 # rule svim:
 #     input:

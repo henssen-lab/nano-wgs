@@ -11,7 +11,7 @@ reference:
   hg38:  "/fast/users/giurgium_c/work/assembly/SV/reference/GRCh38.p13.genome.fa"
 
 # sample config
-metafile: "metadata.csv"
+metafile: "metadata.txt"
 
 # pipeline config
 read_length: 1000
