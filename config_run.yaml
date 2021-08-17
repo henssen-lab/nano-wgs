@@ -1,14 +1,17 @@
  
-PROJECT_NAME : "Evolution"
-WORKING_DIR : "/fast/projects/NB_CircleSeq/work/CircleSeq_data/CircleSeq/Nanopore"
+project_name: "Evolution"
+working_dir: "/fast/projects/NB_CircleSeq/work/CircleSeq_data/CircleSeq/Nanopore"
+tmp_dir: "/fast/users/giurgium_c/scratch"
 
 # GENERAL
 # GUPPY_BASECALLER : "/fast/users/helmsauk_c/work/ont-guppy-cpu/bin/guppy_basecaller"
 
-# should but need not be a writable directory
-HG19 : "/fast/users/giurgium_c/work/assembly/SV/reference/GRCh37.p13.genome.fa" 
-HG38:  "/fast/users/giurgium_c/work/assembly/SV/reference/GRCh38.p13.genome.fa" 
+reference: 
+  hg19:  "/fast/users/giurgium_c/work/assembly/SV/reference/hs37d5.fa"
+  hg38:  "/fast/users/giurgium_c/work/assembly/SV/reference/GRCh38.p13.genome.fa"
 
-MULTISAMPLE: False
-RUN: "/fast/projects/NB_CircleSeq/work/CircleSeq_data/CircleSeq/Nanopore/Evolution/RawData/CB1058-initial_19072021/CB1058-initial"
-SAMPLE: "CB1058-initial_19072021"
+# sample config
+metafile: "metadata.csv"
+
+# pipeline config
+read_length: 1000
