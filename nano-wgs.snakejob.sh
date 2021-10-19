@@ -1,26 +1,55 @@
 #!/bin/bash
-#SBATCH --job-name=nanowgs
-#SBATCH --output=slurm.log
-#SBATCH --ntasks=16
-#SBATCH --nodes=1
-#SBATCH --mem-per-cpu=4000M
-#SBATCH -p long
-#SBATCH --output=slurm-log.txt
 
-mkdir -p slurm-out && rm -r slurm-out && mkdir -p slurm-out
+# metadata_12102021.txt
+meta=$1
+header=`head -1 $meta`
+
+mkdir -p runs/
+
+tail -n+2 $meta | awk '{print $3}' | sort | uniq | while read sample
+do
+
+echo "$header" > runs/${sample}.txt
+grep $sample $meta >> runs/${sample}.txt
+
+echo """#!/bin/bash
+#SBATCH --job-name=$sample
+#SBATCH --ntasks=8
+#SBATCH --nodes=1
+#SBATCH --mem=50GB
+#SBATCH -p long
+#SBATCH --time 7-00:00:00
+#SBATCH --output=slurm-${sample}.txt
+
 set -x
 
 date
 hostname
->&2 echo "Running Snakemake..."
-snakemake \
-    --use-conda \
-    --jobs 4 \
-    --max-jobs-per-second 10 \
-    --keep-going \
-    --rerun-incomplete \
-    --printshellcmds
+""" > runs/${sample}.sh
 
-# --cluster-config config_slurm.yaml \
-# --drmaa " --partition={cluster.partition} --time={cluster.time} --cpus-per-task={cluster.cpus-per-task} --mem-per-cpu={cluster.mem-per-cpu} --output=slurm-out/slurm-%j.out" \
+echo """snakemake \
+-F \
+--jobs 8 \
+--max-jobs-per-second 10 \
+--keep-going \
+--rerun-incomplete \
+--printshellcmds \
+--config metafile=runs/${sample}.txt tmp_dir=/fast/users/giurgium_c/scratch/${sample} \
+--unlock
+
+snakemake \
+-F \
+--jobs 8 \
+--max-jobs-per-second 10 \
+--keep-going \
+--rerun-incomplete \
+--printshellcmds \
+--config metafile=runs/${sample}.txt tmp_dir=/fast/users/giurgium_c/scratch/${sample} """ >> runs/${sample}.sh
+
+sbatch runs/${sample}.sh
+
+done
+
+
+
 

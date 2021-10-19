@@ -43,22 +43,8 @@ rule all:
                 "Process/{sample}/{refid}/ngmlr_{refid}.sniffles.vcf",
                 "Process/{sample}/{refid}/ngmlr_{refid}.svim.vcf",
                 "Process/{sample}/{refid}/coverage_{refid}.bw"
-                ], sample=samples, refid=[HG19, HG38]),
-        # expand("Process/{sample}/QC/NanoPlot-report.html", sample=samples)
-        # expand("{run}/alltemp.fastq", run=[run]),
-        # sample + "/QC/NanoPlot-report.html",
-        # expand("{sample}/ngmlr_{refid}.bam", sample = [sample], refid=[HG19, HG38]),
-        # expand("{sample}/ngmlr_{refid}.bam.bai", sample = [sample], refid=[HG19, HG38]),
-        # expand("{sample}/ngmlr_{refid}.sniffles.vcf", sample = samples, refid=[HG19, HG38]),
-        # expand("{sample}/ngmlr_{refid}.svim.vcf", sample = samples, refid=[HG19, HG38]),
-        # expand("{sample}/ngmlr_{refid}.copynumber.Rdata", sample = samples, refid=[HG19, HG38]),
-        # expand("{sample}/ngmlr_hg38.bam"), sample = samples),
-        # expand("{sample}/ngmlr_hg38.bam.bai"), sample = samples),
-        # expand("{sample}/ngmlr_hg38.sniffles.vcf"), sample = samples),
-        # expand("{sample}/ngmlr_hg38.svim.vcf"), sample = samples)
-
-        # expand(os.path.join(WORKING_DIR, PROJECT_NAME, "Process", "{sample}", "QC", "NanoPlot-report.html"), sample = samples),
-
+                ], sample=samples, refid=[HG19, HG38])
+                
 rule merge_fastq:
     input:
         fastq = lambda wildcards: ["{run}/pass".format(run=row.Run) for index, row in metadata[metadata.Sample == wildcards.sample].iterrows()],
@@ -138,7 +124,7 @@ rule ngmlr:
     conda:
         "envs/mapping-env.yaml"
     params:
-        threads = 32
+        threads = 16
     shell:
         """
         ngmlr --bam-fix --threads {params.threads} --reference {input.reference} --query {input.fastq} --output {output.sam} --presets ont
@@ -157,7 +143,7 @@ rule coverage:
     conda:
         "envs/mapping-env.yaml"
     params:
-        threads = 32
+        threads = 16
     shell:
         "bamCoverage --bam {input.bam} -o {output} --binSize 50 -p {params.threads}"
 
@@ -185,9 +171,9 @@ rule sniffles:
     conda:
         "envs/snv-env.yaml"
     params:
-        threads = 32
+        threads = 16
     shell:
-         "sniffles -t {params.threads} -m {input.bam} -v {output} --min_homo_af 0.7 --min_het_af 0.1 --min_length 500 --cluster --genotype --min-support 4 --report-seq"
+         "sniffles -t {params.threads} -m {input.bam} -v {output} --min_homo_af 0.7 --min_het_af 0.1 --min_length 500 --cluster --genotype --min_support 4 --report-seq"
 
 rule svim:
     input:

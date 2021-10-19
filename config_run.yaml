@@ -14,4 +14,4 @@ reference:
 metafile: "metadata.txt"
 
 # pipeline config
-read_length: 1000
+read_length: 300
