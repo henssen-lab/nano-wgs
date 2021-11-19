@@ -1,0 +1,2 @@
+total reads: 10707221
+median bin count: 211
