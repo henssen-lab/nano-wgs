@@ -24,6 +24,7 @@ kit_dict = pd.Series(metadata.Kit.values,index=metadata.Run).to_dict()
 flowcell_dict = pd.Series(metadata.Flowcell.values,index=metadata.Run).to_dict()
 
 os.chdir(os.path.join(WORKING_DIR, PROJECT_NAME))
+print("current directory: ", os.getcwd())
 
 def get_reference(wildcards):
     """
@@ -43,7 +44,8 @@ rule all:
                 "Process/{sample}/{refid}/ngmlr_{refid}.sniffles.vcf",
                 "Process/{sample}/{refid}/ngmlr_{refid}.svim.vcf",
                 "Process/{sample}/{refid}/coverage_{refid}.bw"
-                ], sample=samples, refid=[HG19, HG38])
+		], sample=samples, refid=[HG19, HG38])
+		
                 
 rule merge_fastq:
     input:
@@ -102,7 +104,7 @@ rule ngmlr_mock:
         "Process/{sample}/filt.fastq"
     output:
         # outf = directory(expand("Process/{sample}/{refid}/", sample=["{sample}"], refid=[HG19, HG38])),
-        outtemp = expand("Process/{sample}/{refid}/temp", sample=["{sample}"], refid=[HG19, HG38])
+        outtemp = expand("Process/{sample}/{refid}/temp", sample=["{sample}"], refid=[HG19,HG38])
     resources:
         tmpdir = TMP_DIR
     conda:
