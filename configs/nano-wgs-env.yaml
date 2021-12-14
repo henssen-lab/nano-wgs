@@ -1,0 +1,47 @@
+name: nano-wgs-env
+channels:
+  - conda-forge
+  - bioconda
+  - r
+  - defaults
+dependencies:
+  - python=3.7.6
+  - ngmlr=0.2.7
+  - svim=1.3.0
+  - samtools=1.9
+  - pip=20.0.2
+  - minimap2=2.17
+  - nanocomp=1.13.1
+  - nanoget=1.16.1
+  - nanomath=1.2.0
+  - nanoplot=1.30.1
+  - nanofilt=2.8.0
+  - nanoplotter=1.10.0
+  - bwidget=1.9.14
+  - matplotlib=3.1.3
+  - scipy=1.4.1
+  - seaborn=0.10.0
+  - statsmodels=0.11.1
+  - snakemake=6.7.0
+  - plotly=4.5.1
+  - yaml=0.2.2
+  - r=3.6
+  - bioconductor-qdnaseq=1.22.0
+  - bioconductor-dnacopy=1.60.0
+  - bioconductor-genomeinfodb=1.22.0
+  - bioconductor-genomeinfodbdata=1.2.2
+  - bioconductor-genomicranges=1.38.0
+  - bioconductor-impute=1.60.0
+  - bioconductor-iranges=2.20.0
+  - bioconductor-limma=3.42.0
+  - bioconductor-marray=1.64.0
+  - bioconductor-qdnaseq=1.22.0
+  - bioconductor-qdnaseq.hg19=1.16.0
+  - bioconductor-rhtslib=1.18.0
+  - bioconductor-rsamtools=2.2.0
+  - bioconductor-s4vectors=0.24.0
+  - bioconductor-xvector=0.26.0
+  - pip:
+    - pyqt5-sip==4.19.18
+    - pyqtwebengine==5.12.1
+

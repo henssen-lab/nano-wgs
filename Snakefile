@@ -5,7 +5,7 @@ from snakemake.utils import min_version
 
 min_version("6.4.1")
 
-configfile: "config_run.yaml"
+configfile: "configs/config_run.yaml"
 
 HG19 = 'hg19'
 HG38 = 'hg38'
@@ -44,12 +44,12 @@ rule all:
                 "Process/{sample}/{refid}/ngmlr_{refid}.sniffles.vcf",
                 "Process/{sample}/{refid}/ngmlr_{refid}.svim.vcf",
                 "Process/{sample}/{refid}/coverage_{refid}.bw"
-		], sample=samples, refid=[HG19, HG38])
+    ], sample=samples, refid=[HG19, HG38])
 		
                 
 rule merge_fastq:
     input:
-        fastq = lambda wildcards: ["{run}/pass".format(run=row.Run) for index, row in metadata[metadata.Sample == wildcards.sample].iterrows()],
+        fastq = lambda wildcards: ["{run}".format(run=row.Run) for index, row in metadata[metadata.Sample == wildcards.sample].iterrows()],
     output:
         allfastq = temp("Process/{sample}/all.fastq"),
     resources:
@@ -193,14 +193,3 @@ rule svim:
         sample = "{sample}"
     shell:
          "svim alignment --read_names --insertion_sequences --sample {params.sample} {params.svim_output_dir} {input.bam} {input.reference} && mv {params.svim_output_dir}variants.vcf {output}"
-
-
-# rule copynumber:
-#     input:
-#         bam="{sample}/ngmlr_{refid}.bam",
-#         bai="{sample}/ngmlr_{refid}.bam.bai"
-#     output:
-#         pdf="{sample}/ngmlr_{refid}.copynumber.pdf",
-#         rdata = "{sample}/ngmlr_{refid}.copynumber.Rdata"
-#     shell:
-#         "Rscript cnprofile.R {input.bam} {output.pdf} {output.rdata}"

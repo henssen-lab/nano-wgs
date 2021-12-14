@@ -1,0 +1,17 @@
+ 
+project_name: "Evolution"
+working_dir: "/fast/projects/NB_CircleSeq/work/CircleSeq_data/CircleSeq/Nanopore"
+tmp_dir: "/fast/users/giurgium_c/scratch"
+
+# GENERAL
+# GUPPY_BASECALLER : "/fast/users/helmsauk_c/work/ont-guppy-cpu/bin/guppy_basecaller"
+
+reference: 
+  hg19:  "/fast/users/giurgium_c/work/assembly/SV/reference/hs37d5.fa"
+  hg38:  "/fast/users/giurgium_c/work/assembly/SV/reference/GRCh38.p13.genome.fa"
+
+# sample config
+metafile: "metadata.txt"
+
+# pipeline config
+read_length: 300
