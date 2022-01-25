@@ -1,0 +1,20 @@
+
+# sample config
+metafile: "metadata.txt"
+
+# outputdir
+outputdir: "/fast/projects/NB_CircleSeq/work/CircleSeq_data/CircleSeq/Nanopore/Cellines/Process"
+
+hg38:
+  genome:  "/fast/users/giurgium_c/work/assembly/SV/reference/GRCh38.p13.genome.fa"
+  gtf: ""
+
+filtering:
+  assembly:
+    readlen: 5000
+    qual: 20
+
+params:
+  mapping: "-E0.5 -x intractg"
+
+threads: 16
