@@ -25,14 +25,13 @@ rule merge_fastq:
         fastq=lambda wildcards: ["{run}".format(run=row.Run) for index, row in
                                  METADATA[METADATA.Sample == wildcards.sample].iterrows()],
     output:
-        allfastq=temp("{outdir}/{sample}/assembly/all.fastq"),
+        allfastq=temp("{outdir}/{sample}/assembly/all.fastq")
     shell:
-        """find {input.fastq} -name '*.fastq' | xargs cat > {output.allfastq}"""
+        """mkdir -p {wildcards.outdir}/{wildcards.sample}/assembly && find {input.fastq} -name '*.fastq' | xargs cat > {output.allfastq}"""
 
 rule assembly:
     input:
         fastq="{outdir}/{sample}/assembly/all.fastq",
-        refcirc="{outdir}/{sample}/reads/circle-template.fa"
     output:
         dir=directory("{outdir}/{sample}/assembly"),
         f="{outdir}/{sample}/assembly/Assembly.fasta"

@@ -6,8 +6,8 @@ metafile: "metadata.txt"
 outputdir: "/fast/projects/NB_CircleSeq/work/CircleSeq_data/CircleSeq/Nanopore/Cellines/Process"
 
 hg38:
-  genome:  "/fast/users/giurgium_c/work/assembly/SV/reference/GRCh38.p13.genome.fa"
-  gtf: ""
+  genome:  "/fast/projects/cubit/current/static_data/annotation/GENCODE/33/GRCh38/GRCh38.p13.genome.fa"
+  gtf: "/fast/projects/cubit/current/static_data/annotation/GENCODE/33/GRCh38/gencode.v33.annotation.gtf"
 
 filtering:
   assembly:
