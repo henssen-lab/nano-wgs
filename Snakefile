@@ -26,6 +26,9 @@ flowcell_dict = pd.Series(metadata.Flowcell.values,index=metadata.Run).to_dict()
 os.chdir(os.path.join(WORKING_DIR, PROJECT_NAME))
 print("current directory: ", os.getcwd())
 
+# include modules
+include: "rules/sv.smk"
+
 def get_reference(wildcards):
     """
     Get reference genome
@@ -43,7 +46,8 @@ rule all:
                 "Process/{sample}/{refid}/ngmlr_{refid}.stats.txt",
                 "Process/{sample}/{refid}/ngmlr_{refid}.sniffles.vcf",
                 "Process/{sample}/{refid}/ngmlr_{refid}.svim.vcf",
-                "Process/{sample}/{refid}/coverage_{refid}.bw"
+                "Process/{sample}/{refid}/coverage_{refid}.bw",
+                "Process/{sample}/{refid}/ngmlr_{refid}.sniffles.bedpe",
     ], sample=samples, refid=[HG19, HG38])
 		
                 
@@ -162,34 +166,3 @@ rule stats:
     shell:
         "samtools stats {input.bam} > {output}"
 
-rule sniffles:
-    input:
-        bam="Process/{sample}/{refid}/ngmlr_{refid}.bam",
-        bai="Process/{sample}/{refid}/ngmlr_{refid}.bam.bai"
-    output:
-        protected("Process/{sample}/{refid}/ngmlr_{refid}.sniffles.vcf")
-    resources:
-        tmpdir = TMP_DIR
-    conda:
-        "envs/snv-env.yaml"
-    params:
-        threads = 16
-    shell:
-         "sniffles -t {params.threads} -m {input.bam} -v {output} --min_homo_af 0.7 --min_het_af 0.1 --min_length 500 --cluster --genotype --min_support 4 --report-seq"
-
-rule svim:
-    input:
-        bam="Process/{sample}/{refid}/ngmlr_{refid}.bam",
-        bai="Process/{sample}/{refid}/ngmlr_{refid}.bam.bai",
-        reference=get_reference
-    output:
-        protected("Process/{sample}/{refid}/ngmlr_{refid}.svim.vcf")
-    resources:
-        tmpdir = TMP_DIR
-    conda:
-        "envs/snv-env.yaml"
-    params:
-        svim_output_dir = "Process/{sample}/{refid}/svim/",
-        sample = "{sample}"
-    shell:
-         "svim alignment --read_names --insertion_sequences --sample {params.sample} {params.svim_output_dir} {input.bam} {input.reference} && mv {params.svim_output_dir}variants.vcf {output}"
