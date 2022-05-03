@@ -10,15 +10,39 @@ configfile: "configs/config_run.yaml"
 HG19 = 'hg19'
 HG38 = 'hg38'
 REFERENCE = 'reference'
+THREADS = config["threads"]
+MUX = False
 
+REFS = config['refs'].split(",") # hg19,hg38
 PROJECT_NAME = config['project_name']
 WORKING_DIR = config['working_dir']
 METADATA_FILE = config['metafile']
+DEMUX_FILE = config['muxfile']
 TMP_DIR = config['tmp_dir']
 HEADER_SUM = os.path.join(os.getcwd(), "envs/header_summary.txt")
 
+
 metadata = pd.read_csv(METADATA_FILE, sep="\t", header=0)
+
+if len(DEMUX_FILE) > 0:
+    # sample barcode
+    demux = pd.read_csv(DEMUX_FILE, sep="\t", header=0)
+
+    # generate all filenames based on the borcodes
+    metadata = metadata.merge(demux, how='cross')
+    metadata['RunRoot'] = metadata.Run.str.extract('(.*)\/demux', expand=True)
+    print(metadata)
+    metadata['RunRoot'] = metadata['RunRoot'].astype(str) + "/fastq"
+    metadata.Run = metadata.Run.str.cat(metadata.Barcode, sep='/')
+    metadata.Sample = metadata.Sample.str.cat(metadata.Sample_ID, sep='/')
+    metadata.Patient = metadata.Sample.str.cat(metadata.Barcode, sep='/')
+    MUX = True
+
+print(metadata)
+
 runs = list(set(metadata.Run.tolist()))
+print(runs)
+print(list(set(metadata.RunRoot.tolist())))
 samples = list(set(metadata.Sample.tolist()))
 kit_dict = pd.Series(metadata.Kit.values,index=metadata.Run).to_dict()
 flowcell_dict = pd.Series(metadata.Flowcell.values,index=metadata.Run).to_dict()
@@ -26,8 +50,6 @@ flowcell_dict = pd.Series(metadata.Flowcell.values,index=metadata.Run).to_dict()
 os.chdir(os.path.join(WORKING_DIR, PROJECT_NAME))
 print("current directory: ", os.getcwd())
 
-# include modules
-include: "rules/sv.smk"
 
 def get_reference(wildcards):
     """
@@ -36,6 +58,9 @@ def get_reference(wildcards):
     if wildcards.refid == HG19:
         return config[REFERENCE][HG19]
     return config[REFERENCE][HG38]
+
+# include modules
+include: "rules/sv.smk"
 
 rule all:
     input:
@@ -48,7 +73,7 @@ rule all:
                 "Process/{sample}/{refid}/ngmlr_{refid}.svim.vcf",
                 "Process/{sample}/{refid}/coverage_{refid}.bw",
                 "Process/{sample}/{refid}/ngmlr_{refid}.sniffles.bedpe",
-    ], sample=samples, refid=[HG19, HG38])
+    ], sample=samples, refid=REFS)
 		
                 
 rule merge_fastq:
@@ -61,18 +86,39 @@ rule merge_fastq:
     shell:
         """find {input.fastq} -name '*.fastq' | xargs cat > {output.allfastq}"""
 
-rule merge_summary:
-    input:
-        sumfiles = lambda wildcards: ["{run}/sequencing_summary.txt".format(run=row.Run) for index, row in metadata[metadata.Sample == wildcards.sample].iterrows()],
-    output:
-        seqsum = temp("Process/{sample}/sequencing_summary.txt")
-    resources:
-        tmpdir = TMP_DIR
-    params:
-        shead = HEADER_SUM
-    shell:
-        """cat {params.shead} > {output.seqsum} && \
-           cat {input.sumfiles} | grep -v "passes_filtering" >> {output.seqsum}"""
+# single sample
+if MUX == False:
+    rule merge_summary:
+        input:
+            sumfiles = lambda wildcards: ["{run}/sequencing_summary.txt".format(run=row.Run) for index, row in metadata[metadata.Sample == wildcards.sample].iterrows()],
+        output:
+            seqsum = temp("Process/{sample}/sequencing_summary.txt")
+        resources:
+            tmpdir = TMP_DIR
+        params:
+            shead = HEADER_SUM
+        shell:
+            """
+            cat {params.shead} > {output.seqsum} && \
+            cat {input.sumfiles} | grep -v "passes_filtering" >> {output.seqsum}
+            """
+# multiplexed samples
+else:
+    rule merge_summary:
+        input:
+            sumfiles = lambda wildcards: ["{run}/sequencing_summary.txt".format(run=row.RunRoot) for index, row in metadata[metadata.Sample == wildcards.sample].iterrows()]
+        output:
+            seqsum = temp("Process/{sample}/sequencing_summary.txt")
+        resources:
+            tmpdir = TMP_DIR
+        params:
+            shead = HEADER_SUM,
+            barcode = lambda wildcards: [row.Barcode for index, row in metadata[metadata.Sample == wildcards.sample].iterrows()]
+        shell:
+            """
+            cat {params.shead} > {output.seqsum} && \
+            cat {input.sumfiles} | grep -v "passes_filtering" | grep {params.barcode} >> {output.seqsum}
+            """
 
 rule nanoplot:
     input:
@@ -108,7 +154,7 @@ rule ngmlr_mock:
         "Process/{sample}/filt.fastq"
     output:
         # outf = directory(expand("Process/{sample}/{refid}/", sample=["{sample}"], refid=[HG19, HG38])),
-        outtemp = expand("Process/{sample}/{refid}/temp", sample=["{sample}"], refid=[HG19,HG38])
+        outtemp = expand("Process/{sample}/{refid}/temp", sample=["{sample}"], refid=REFS)
     resources:
         tmpdir = TMP_DIR
     conda:
@@ -130,7 +176,7 @@ rule ngmlr:
     conda:
         "envs/mapping-env.yaml"
     params:
-        threads = 16
+        threads = THREADS
     shell:
         """
         ngmlr --bam-fix --threads {params.threads} --reference {input.reference} --query {input.fastq} --output {output.sam} --presets ont

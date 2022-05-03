@@ -6,12 +6,18 @@ tmp_dir: "/fast/users/giurgium_c/scratch"
 # GENERAL
 # GUPPY_BASECALLER : "/fast/users/helmsauk_c/work/ont-guppy-cpu/bin/guppy_basecaller"
 
+refs: "hg19,hg38"
+threads: 32
+
 reference: 
   hg19:  "/fast/users/giurgium_c/work/assembly/SV/reference/hs37d5.fa"
   hg38:  "/fast/users/giurgium_c/work/assembly/SV/reference/GRCh38.p13.genome.fa"
 
 # sample config
 metafile: "metadata.txt"
+
+# multiplexing config
+muxfile: ""
 
 # pipeline config
 read_length: 300
