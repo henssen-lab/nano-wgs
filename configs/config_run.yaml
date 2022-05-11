@@ -7,7 +7,7 @@ tmp_dir: "/fast/users/giurgium_c/scratch"
 # GUPPY_BASECALLER : "/fast/users/helmsauk_c/work/ont-guppy-cpu/bin/guppy_basecaller"
 
 refs: "hg19,hg38"
-threads: 32
+threads: 8
 
 reference: 
   hg19:  "/fast/users/giurgium_c/work/assembly/SV/reference/hs37d5.fa"

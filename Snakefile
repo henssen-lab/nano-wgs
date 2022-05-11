@@ -31,19 +31,15 @@ if len(DEMUX_FILE) > 0:
     # generate all filenames based on the borcodes
     metadata = metadata.merge(demux, how='cross')
     metadata['RunRoot'] = metadata.Run.str.extract('(.*)\/demux', expand=True)
-    print(metadata)
-    metadata['RunRoot'] = metadata['RunRoot'].astype(str) + "/fastq"
     metadata.Run = metadata.Run.str.cat(metadata.Barcode, sep='/')
     metadata.Sample = metadata.Sample.str.cat(metadata.Sample_ID, sep='/')
     metadata.Patient = metadata.Sample.str.cat(metadata.Barcode, sep='/')
     MUX = True
 
-print(metadata)
-
 runs = list(set(metadata.Run.tolist()))
 print(runs)
-print(list(set(metadata.RunRoot.tolist())))
 samples = list(set(metadata.Sample.tolist()))
+print(samples)
 kit_dict = pd.Series(metadata.Kit.values,index=metadata.Run).to_dict()
 flowcell_dict = pd.Series(metadata.Flowcell.values,index=metadata.Run).to_dict()
 
@@ -64,7 +60,8 @@ include: "rules/sv.smk"
 
 rule all:
     input:
-        expand(["Process/{sample}/QC/NanoPlot-report.html",
+        expand(["Process/{sample}/sequencing_summary.txt",
+                "Process/{sample}/QC/NanoPlot-report.html",
                 "Process/{sample}/filt.fastq",
                 "Process/{sample}/{refid}/ngmlr_{refid}.bam",
                 "Process/{sample}/{refid}/ngmlr_{refid}.bam.bai",
@@ -92,7 +89,7 @@ if MUX == False:
         input:
             sumfiles = lambda wildcards: ["{run}/sequencing_summary.txt".format(run=row.Run) for index, row in metadata[metadata.Sample == wildcards.sample].iterrows()],
         output:
-            seqsum = temp("Process/{sample}/sequencing_summary.txt")
+            seqsum = "Process/{sample}/sequencing_summary.txt"
         resources:
             tmpdir = TMP_DIR
         params:
@@ -106,18 +103,22 @@ if MUX == False:
 else:
     rule merge_summary:
         input:
-            sumfiles = lambda wildcards: ["{run}/sequencing_summary.txt".format(run=row.RunRoot) for index, row in metadata[metadata.Sample == wildcards.sample].iterrows()]
+            sumfiles = lambda wildcards: ["{run}/fastq/sequencing_summary.txt".format(run=row.RunRoot) for index, row in metadata[metadata.Sample == wildcards.sample].iterrows()],
+            barcodesfile = lambda wildcards: ["{run}/demux/barcoding_summary.txt".format(run=row.RunRoot) for index, row in metadata[metadata.Sample == wildcards.sample].iterrows()]
         output:
-            seqsum = temp("Process/{sample}/sequencing_summary.txt")
+            seqsum = "Process/{sample}/sequencing_summary.txt"
         resources:
             tmpdir = TMP_DIR
         params:
             shead = HEADER_SUM,
-            barcode = lambda wildcards: [row.Barcode for index, row in metadata[metadata.Sample == wildcards.sample].iterrows()]
+            barcode = lambda wildcards: [row.Barcode for index, row in metadata[metadata.Sample == wildcards.sample].iterrows()][0]
         shell:
             """
             cat {params.shead} > {output.seqsum} && \
-            cat {input.sumfiles} | grep -v "passes_filtering" | grep {params.barcode} >> {output.seqsum}
+            mkdir -p {resources.tmpdir}/{params.barcode} && \
+            cat {input.barcodesfile} > '{resources.tmpdir}/{params.barcode}/input.txt' && \
+            cat {input.sumfiles} > '{resources.tmpdir}/{params.barcode}/sumfiles.txt' && \
+            grep '{params.barcode}' '{resources.tmpdir}/{params.barcode}/input.txt' | awk '{{print $1}}' | grep -f- '{resources.tmpdir}/{params.barcode}/sumfiles.txt' >> {output.seqsum}
             """
 
 rule nanoplot:
@@ -151,7 +152,7 @@ rule nanfilt:
 
 rule ngmlr_mock:
     input:
-        "Process/{sample}/filt.fastq"
+        fastq = "Process/{sample}/filt.fastq"
     output:
         # outf = directory(expand("Process/{sample}/{refid}/", sample=["{sample}"], refid=[HG19, HG38])),
         outtemp = expand("Process/{sample}/{refid}/temp", sample=["{sample}"], refid=REFS)
