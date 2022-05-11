@@ -1,0 +1,3 @@
+Run	Sample	Patient	Kit	Flowcell
+RawData/CB1058-resection_21072021/CB1058-resection/CB1058-resection-1/20210721_1057_MN31855_FAQ01806_85594de4/fastq/pass	CB1058-resection_21072021	CB1058-resection	SQK-LSK110	FLO-MIN106
+RawData/CB1058-resection_21072021/CB1058-resection/CB1058-resection-2/20210722_1247_MN31855_FAQ01806_1540d94f/fastq/pass	CB1058-resection_21072021	CB1058-resection	SQK-LSK110	FLO-MIN106

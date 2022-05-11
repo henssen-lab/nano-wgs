@@ -1,0 +1,3 @@
+Run	Sample	Patient	Kit	Flowcell
+/fast/users/giurgium_c/scratch/Evolution/GIAB-Coriell-DNA_compressed/GIAB-Coriell-DNA-NA24385-J1/NA24385-J1-1/20211102_1130_MN31855_FAQ95036_9657b3c7/fastq	GIAB-Coriell-DNA_compressed	GIAB-Coriell-DNA-NA24385-J1_compressed	SQK-LSK110	FLO-MIN106
+/fast/users/giurgium_c/scratch/Evolution/GIAB-Coriell-DNA_compressed/GIAB-Coriell-DNA-NA24385-J1/NA24385-J1-2/20211103_1204_MN31855_FAQ95036_68537890/fastq	GIAB-Coriell-DNA_compressed	GIAB-Coriell-DNA-NA24385-J1_compressed	SQK-LSK110	FLO-MIN106
