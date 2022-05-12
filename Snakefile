@@ -67,9 +67,11 @@ rule all:
                 "Process/{sample}/{refid}/ngmlr_{refid}.bam.bai",
                 "Process/{sample}/{refid}/ngmlr_{refid}.stats.txt",
                 "Process/{sample}/{refid}/ngmlr_{refid}.sniffles.vcf",
+		"Process/{sample}/{refid}/ngmlr_{refid}.sniffles.conf.vcf",
                 "Process/{sample}/{refid}/ngmlr_{refid}.svim.vcf",
                 "Process/{sample}/{refid}/coverage_{refid}.bw",
                 "Process/{sample}/{refid}/ngmlr_{refid}.sniffles.bedpe",
+		"Process/{sample}/{refid}/ngmlr_{refid}.sniffles.conf.bedpe",
     ], sample=samples, refid=REFS)
 		
                 
@@ -169,8 +171,8 @@ rule ngmlr:
         reference = get_reference,
         ftemp = "Process/{sample}/{refid}/temp"
     output:
-        bam = protected("Process/{sample}/{refid}/ngmlr_{refid}.bam"),
-        bai = protected("Process/{sample}/{refid}/ngmlr_{refid}.bam.bai"),
+        bam = "Process/{sample}/{refid}/ngmlr_{refid}.bam",
+        bai = "Process/{sample}/{refid}/ngmlr_{refid}.bam.bai",
         sam = temp("Process/{sample}/{refid}/ngmlr_{refid}.sam")
     resources:
         tmpdir = TMP_DIR
@@ -190,7 +192,7 @@ rule coverage:
         bam="Process/{sample}/{refid}/ngmlr_{refid}.bam",
         bai="Process/{sample}/{refid}/ngmlr_{refid}.bam.bai"
     output:
-        protected("Process/{sample}/{refid}/coverage_{refid}.bw")
+        "Process/{sample}/{refid}/coverage_{refid}.bw"
     resources:
         tmpdir = TMP_DIR
     conda:
