@@ -1,0 +1,11 @@
+Barcode	Sample_ID
+barcode01	TR14-B1
+barcode02	TR14-B3
+barcode03	TR14-B12
+barcode04	TR14-F12
+barcode05	TR14-G12
+barcode06	CHP212-2-A9
+barcode07	CHP212-2-E9
+barcode08	CHP212-2-G10
+barcode09	CHP212-3-A9
+barcode10	CHP212-3-H2

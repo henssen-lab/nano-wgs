@@ -1,0 +1,2 @@
+Run	Sample	Patient	Kit	Flowcell
+/fast/users/giurgium_c/CircleSeq/Nanopore/Celllines/RawData/RH4_samples_Heath/RH4_AZDr	RH4_AZDr_01122021	RH4_AZDr	SQK-LSK110	FLO-MIN106

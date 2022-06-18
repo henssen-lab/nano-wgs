@@ -1,0 +1,2 @@
+Run	Sample	Patient	Kit	Flowcell
+/fast/users/giurgium_c/CircleSeq/Nanopore/Celllines/RawData/RH4_samples_Heath/RH4_DMSOr	RH4_DMSOr_01122021	RH4_DMSOr	SQK-LSK110	FLO-MIN106

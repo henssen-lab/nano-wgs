@@ -1,0 +1,2 @@
+Run	Sample	Patient	Kit	Flowcell
+/fast/users/giurgium_c/CircleSeq/Nanopore/Celllines/RawData/CHP212_WGS_Nanopore/HMW_CHP212_run3/fastq_gpu	CHP212_WGS_Nanopore	CHP212_WGS_Nanopore	SQK-LSK109	FLO-MIN106

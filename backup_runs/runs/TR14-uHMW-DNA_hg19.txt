@@ -1,0 +1,2 @@
+Run	Sample	Patient	Kit	Flowcell
+/fast/users/giurgium_c/CircleSeq/Nanopore/Celllines/RawData/TR14-uHMW-DNA/TR14-uHMW-DNA/TR14-run1/20220111_1100_MN31855_FAR91468_7bf3bfa8/fastq	TR14-uHMW-DNA_01122021	TR14-uHMW-DNA	SQK-ULK001	FLO-MIN106

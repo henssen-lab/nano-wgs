@@ -1,0 +1,3 @@
+Run	Sample	Patient	Kit	Flowcell	
+/fast/users/giurgium_c/CircleSeq/Nanopore/Celllines/RawData/Rocio_TR14-Kelly-CHP212-Endo_T7_treated/TR14_Kelly_CHP2122/20220405_1728_MN31855_FAR91356_b564d40e/demux	Rocio_TR14-Kelly-CHP212-Endo_T7_treated	Rocio_TR14-Kelly-CHP212-Endo_T7_treated	SQK-RBK004	FLO-MIN106
+/fast/users/giurgium_c/CircleSeq/Nanopore/Celllines/RawData/Rocio_TR14-Kelly-CHP212-Endo_T7_treated/TR14_Kelly-CHP212-2/20220406_1528_MN31855_FAR91356_755c9e67/demux	Rocio_TR14-Kelly-CHP212-Endo_T7_treated	SQK-RBK004	FLO-MIN106
