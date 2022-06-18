@@ -1,0 +1,56 @@
++ set -e
++ datadir=/fast/users/giurgium_c/CircleSeq/Nanopore/Evolution/Process/CB1058-resection_21072021/hg19
++ fin=/fast/users/giurgium_c/CircleSeq/Nanopore/Evolution/Process/CB1058-resection_21072021/hg19/ngmlr_hg19.bam
++ sample=CB1058-resection_21072021
++ datatemp=/fast/users/giurgium_c/scratch/CNV/CB1058-resection_21072021
++ mkdir -p /fast/users/giurgium_c/scratch/CNV/CB1058-resection_21072021
++ scripts_root=/fast/users/giurgium_c/work/nano-wgs/cnv/smurfseq_scripts/scripts/
++ scripts_data=/fast/users/giurgium_c/work/nano-wgs/cnv/smurfseq_scripts/data
++ scripts_cnv=/fast/users/giurgium_c/work/nano-wgs/cnv/smurfseq_scripts/scripts/cnvAnalysis.R
++ export LANG=en_US.UTF-8
++ LANG=en_US.UTF-8
++ export LC_ALL=en_US.UTF-8
++ LC_ALL=en_US.UTF-8
++ echo /fast/users/giurgium_c/CircleSeq/Nanopore/Evolution/Process/CB1058-resection_21072021/hg19/ngmlr_hg19.bam
++ echo 'check bam and bed for consistency in chromosome annotation!!'
++ mkdir -p /fast/users/giurgium_c/CircleSeq/Nanopore/Evolution/Process/CB1058-resection_21072021/hg19/cnv_50k
++ cd /fast/users/giurgium_c/work/nano-wgs/cnv/smurfseq_scripts/scripts/
++ ./filterAlnScoreAndQual.py -i /fast/users/giurgium_c/CircleSeq/Nanopore/Evolution/Process/CB1058-resection_21072021/hg19/ngmlr_hg19.bam -o /fast/users/giurgium_c/scratch/CNV/CB1058-resection_21072021/unambig_smurf_frags.sam -s 120 -q 1
++ sed -e s/SN:2/SN:chr2/
++ samtools view -H /fast/users/giurgium_c/CircleSeq/Nanopore/Evolution/Process/CB1058-resection_21072021/hg19/ngmlr_hg19.bam
++ sed -e s/SN:1/SN:chr1/
++ sed -e s/SN:4/SN:chr4/
++ sed -e s/SN:3/SN:chr3/
++ sed -e s/SN:5/SN:chr5/
++ sed -e s/SN:7/SN:chr7/
++ sed -e s/SN:6/SN:chr6/
++ sed -e s/SN:8/SN:chr8/
++ sed -e s/SN:9/SN:chr9/
++ sed -e s/SN:10/SN:chr10/
++ sed -e s/SN:12/SN:chr12/
++ sed -e s/SN:11/SN:chr11/
++ sed -e s/SN:13/SN:chr13/
++ sed -e s/SN:15/SN:chr15/
++ sed -e s/SN:14/SN:chr14/
++ sed -e s/SN:16/SN:chr16/
++ sed -e s/SN:17/SN:chr17/
++ sed -e s/SN:19/SN:chr19/
++ sed -e s/SN:18/SN:chr18/
++ sed -e s/SN:20/SN:chr20/
++ sed -e s/SN:21/SN:chr21/
++ sed -e s/SN:X/SN:chrX/
++ sed -e s/SN:22/SN:chr22/
++ sed -e s/SN:Y/SN:chrY/
++ sed -e s/SN:MT/SN:chrM/
++ samtools view -@16 -h -O BAM /fast/users/giurgium_c/scratch/CNV/CB1058-resection_21072021/unambig_smurf_frags.sam
++ samtools reheader h.sam /fast/users/giurgium_c/scratch/CNV/CB1058-resection_21072021/unambig_smurf_frags.bam
++ samtools view -h -O SAM -
++ ./getBinCounts.py -v -i /fast/users/giurgium_c/scratch/CNV/CB1058-resection_21072021/unambig_smurf_frags_chr.sam -c ../data/hg19.chrom.sizes -b ../data/bins_50k_hg19.bed -o /fast/users/giurgium_c/scratch/CNV/CB1058-resection_21072021/bin_counts.bed -s ../data/bin_stats.txt
++ cd /fast/users/giurgium_c/CircleSeq/Nanopore/Evolution/Process/CB1058-resection_21072021/hg19/cnv_50k/
++ Rscript /fast/users/giurgium_c/work/nano-wgs/cnv/smurfseq_scripts/scripts/cnvAnalysis.R /fast/users/giurgium_c/scratch/CNV/CB1058-resection_21072021/bin_counts.bed CB1058-resection_21072021 /fast/users/giurgium_c/work/nano-wgs/cnv/smurfseq_scripts/data/bins_50k_hg19_gc.txt /fast/users/giurgium_c/work/nano-wgs/cnv/smurfseq_scripts/data/bins_50k_hg19_exclude.txt
+Warning messages:
+1: In regularize.values(x, y, ties, missing(ties), na.rm = na.rm) :
+  collapsing to unique 'x' values
+2: In order(as.numeric(sortcol)) : NAs introduced by coercion
+3: In which(as.numeric(chrom) == chrom.shift) : NAs introduced by coercion
++ rm /fast/users/giurgium_c/scratch/CNV/CB1058-resection_21072021/unambig_smurf_frags.bam /fast/users/giurgium_c/scratch/CNV/CB1058-resection_21072021/unambig_smurf_frags_chr.sam /fast/users/giurgium_c/scratch/CNV/CB1058-resection_21072021/unambig_smurf_frags.sam

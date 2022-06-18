@@ -85,5 +85,5 @@
 @SQ	SN:GL000192.1	LN:547496
 @SQ	SN:NC_007605	LN:171823
 @SQ	SN:hs37d5	LN:35477943
-@PG	ID:ngmlr	PN:nextgenmap-lr	VN:0.2.7	CL:ngmlr --bam-fix --threads 16 --reference /fast/users/giurgium_c/work/assembly/SV/reference/hs37d5.fa --query Process/K9-CB2034-relapse_30082021/filt.fastq --output Process/K9-CB2034-relapse_30082021/hg19/ngmlr_hg19.sam --presets ont
-@PG	ID:samtools	PN:samtools	PP:ngmlr	VN:1.14	CL:samtools view -H /fast/users/giurgium_c/CircleSeq/Nanopore/Evolution/Process/K9-CB2034-relapse_30082021/hg19/ngmlr_hg19.bam
+@PG	ID:ngmlr	PN:nextgenmap-lr	VN:0.2.7	CL:ngmlr --bam-fix --threads 16 --reference /fast/users/giurgium_c/work/assembly/SV/reference/hs37d5.fa --query Process/RH4_DMSOr_01122021/filt.fastq --output Process/RH4_DMSOr_01122021/hg19/ngmlr_hg19.sam --presets ont
+@PG	ID:samtools	PN:samtools	PP:ngmlr	VN:1.14	CL:samtools view -H /fast/users/giurgium_c/CircleSeq/Nanopore/Celllines/Process/RH4_DMSOr_01122021/hg19/ngmlr_hg19.bam

@@ -1,2 +1,2 @@
-total reads: 10707221
-median bin count: 211
+total reads: 74324
+median bin count: 1
