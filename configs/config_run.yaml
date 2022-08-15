@@ -12,6 +12,7 @@ threads: 8
 reference: 
   hg19:  "/fast/users/giurgium_c/work/assembly/SV/reference/hs37d5.fa"
   hg38:  "/fast/users/giurgium_c/work/assembly/SV/reference/GRCh38.p13.genome.fa"
+  T2T-CHM13: "/fast/projects/NB_CircleSeq/work/CircleSeq_data/CircleSeq/Nanopore/Evolution/reference/GCA_009914755.4.fa"
 
 # sample config
 metafile: "metadata.txt"

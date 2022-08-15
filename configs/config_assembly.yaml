@@ -3,7 +3,7 @@
 metafile: "metadata.txt"
 
 # outputdir
-outputdir: "/fast/projects/NB_CircleSeq/work/CircleSeq_data/CircleSeq/Nanopore/Cellines/Process"
+outputdir: "/fast/projects/NB_CircleSeq/work/CircleSeq_data/CircleSeq/Nanopore/Celllines/Process"
 
 hg38:
   genome:  "/fast/projects/cubit/current/static_data/annotation/GENCODE/33/GRCh38/GRCh38.p13.genome.fa"
@@ -11,7 +11,7 @@ hg38:
 
 filtering:
   assembly:
-    readlen: 5000
+    readlen: 10000
     qual: 20
 
 params:
