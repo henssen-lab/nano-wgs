@@ -41,7 +41,7 @@ rule survivor:
     conda:
         "../envs/sv.yaml"
     log:
-        "Process/{sample}/logs/survivor.log"
+        "Process/{sample}/logs/survivor_{refid}.log"
     shell:
         """
         SURVIVOR vcftobed {input.unfilt} -1 -1 {output.unfilt} &> {log}
