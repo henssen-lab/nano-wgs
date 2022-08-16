@@ -6,15 +6,19 @@ rule sniffles:
         bam="Process/{sample}/{refid}/ngmlr_{refid}.bam",
         bai="Process/{sample}/{refid}/ngmlr_{refid}.bam.bai"
     output:
-        protected("Process/{sample}/{refid}/ngmlr_{refid}.sniffles.vcf")
+        sniff="Process/{sample}/{refid}/ngmlr_{refid}.sniffles.vcf",
+	sniffconf="Process/{sample}/{refid}/ngmlr_{refid}.sniffles.conf.vcf"
     resources:
         tmpdir = TMP_DIR
     conda:
-        "envs/snv-env.yaml"
+        "../envs/snv-env.yaml"
     params:
-        threads = 16
+        threads = 8
     shell:
-         "sniffles -t {params.threads} -m {input.bam} -v {output} --min_homo_af 0.7 --min_het_af 0.1 --min_length 50 --cluster --genotype --min_support 4 --report-seq"
+         """
+	sniffles -t {params.threads} -m {input.bam} -v {output.sniff} --min_homo_af 0.7 --min_het_af 0.1 --min_length 50 --cluster --genotype --min_support 4 --report-seq
+	sniffles -t {params.threads} -m {input.bam} -v {output.sniffconf} --min_homo_af 0.7 --min_het_af 0.1 --min_length 500 --cluster --genotype --min_support 10 --report-seq
+	"""
 
 rule svim:
     input:
@@ -22,11 +26,11 @@ rule svim:
         bai="Process/{sample}/{refid}/ngmlr_{refid}.bam.bai",
         reference=get_reference
     output:
-        protected("Process/{sample}/{refid}/ngmlr_{refid}.svim.vcf")
+        "Process/{sample}/{refid}/ngmlr_{refid}.svim.vcf"
     resources:
         tmpdir = TMP_DIR
     conda:
-        "envs/snv-env.yaml"
+        "../envs/snv-env.yaml"
     params:
         svim_output_dir = "Process/{sample}/{refid}/svim/",
         sample = "{sample}"
@@ -35,14 +39,17 @@ rule svim:
 
 rule survivor:
     input:
-        unfilt="Process/{sample}/{refid}/ngmlr_{refid}.sniffles.vcf"
+        unfilt="Process/{sample}/{refid}/ngmlr_{refid}.sniffles.vcf",
+	filt="Process/{sample}/{refid}/ngmlr_{refid}.sniffles.conf.vcf"
     output:
-        unfilt="Process/{sample}/{refid}/ngmlr_{refid}.sniffles.bedpe"
+        unfilt="Process/{sample}/{refid}/ngmlr_{refid}.sniffles.bedpe",
+	filt="Process/{sample}/{refid}/ngmlr_{refid}.sniffles.conf.bedpe"
     conda:
         "../envs/sv.yaml"
     log:
-        "Process/{sample}/logs/survivor_{refid}.log"
+        "Process/{sample}/{refid}/logs/survivor.log"
     shell:
         """
         SURVIVOR vcftobed {input.unfilt} -1 -1 {output.unfilt} &> {log}
+	SURVIVOR vcftobed {input.filt} -1 -1 {output.filt} &>> {log}
         """

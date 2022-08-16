@@ -17,7 +17,8 @@ BWA_ALING = config["params"]["mapping"]
 
 rule all:
     input:
-        expand(["{outdir}/{sample}/assembly/Assembly.fasta",
+        expand(["{outdir}/{sample}/assembly/all.fastq",
+		"{outdir}/{sample}/assembly_shasta/Assembly.fasta",
                 "{outdir}/{sample}/assembly/assembly_bwa.sam"],outdir=OUTDIR,sample=METADATA.Sample.drop_duplicates().tolist())
 
 rule merge_fastq:
@@ -25,7 +26,7 @@ rule merge_fastq:
         fastq=lambda wildcards: ["{run}".format(run=row.Run) for index, row in
                                  METADATA[METADATA.Sample == wildcards.sample].iterrows()],
     output:
-        allfastq=temp("{outdir}/{sample}/assembly/all.fastq")
+        allfastq="{outdir}/{sample}/assembly/all.fastq"
     shell:
         """mkdir -p {wildcards.outdir}/{wildcards.sample}/assembly && find {input.fastq} -name '*.fastq' | xargs cat > {output.allfastq}"""
 
@@ -33,8 +34,8 @@ rule assembly:
     input:
         fastq="{outdir}/{sample}/assembly/all.fastq",
     output:
-        dir=directory("{outdir}/{sample}/assembly"),
-        f="{outdir}/{sample}/assembly/Assembly.fasta"
+        dir=directory("{outdir}/{sample}/assembly_shasta"),
+        f="{outdir}/{sample}/assembly_shasta/Assembly.fasta"
     threads: THREADS
     params:
         minlen=MINLEN
@@ -55,7 +56,7 @@ rule assembly:
 
 rule assembly_qc:
     input:
-        assembly="{outdir}/{sample}/assembly/Assembly.fasta",
+        assembly="{outdir}/{sample}/assembly_shasta/Assembly.fasta",
         ref=REF,
         gtf=GTF
     output:
@@ -75,7 +76,7 @@ rule assembly_qc:
 
 rule assembly_against_ref:
     input:
-        assembly="{outdir}/{sample}/assembly/Assembly.fasta",
+        assembly="{outdir}/{sample}/assembly_shasta/Assembly.fasta",
         ref=REF,
         gtf=GTF
     output:
