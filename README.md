@@ -7,8 +7,8 @@
 #### 1. Data structure
 
 The input of the pipeline are `fastq` files. 
-If you have only the `fast5` and not the `fastq` you need to perform the basecalling.
-Usually for the nanopore projects the basecalling is already performed (currently using Guppy5).
+If you have only the `fast5/pod5` and not the `fastq` you need to perform the basecalling.
+Usually for the nanopore projects the basecalling is already performed (Guppy5/Dorado).
 
 Set up your data as follows:
 
@@ -55,12 +55,12 @@ Run pipeline using the structure of the following script:
 
 ```
 #!/bin/bash
-#SBATCH --job-name=Rocio-hg38
+#SBATCH --job-name=test-hg38
 #SBATCH --ntasks=16
 #SBATCH --nodes=1
 #SBATCH --mem=100GB
 #SBATCH --time 7-00:00:00
-#SBATCH --output=slurm-Rocio-Multiplexed-TR14-CHP212-hg38.txt
+#SBATCH --output=slurm-<SampleName>-hg38.txt
 
 set -x
 
@@ -68,19 +68,20 @@ date
 hostname
 
 # metadata.txt - configuration file
-meta=backup_runs/runs/Rocio_Multiplexed.txt 
+meta=metadata.txt
 
 # barcodes.txt - barcodes specification in case of multiplexing
-mux=backup_runs/runs/Rocio_Multiplexed_Barcodes.txt
+mux=barcodes.txt
 
 # set temp folder
-tmp=/fast/users/giurgium_c/scratch/Rocio-Multiplexed-TR14-CHP212-hg38
-working_dir=/fast/users/giurgium_c/Nanopore
-project_name=Celllines
+tmp=/fast/users/giurgium_c/scratch/<SampleName>
+working_dir=/fast/users/<YourUser>/Nanopore
+project_name=Celllines # this is a path (relative)
 refs="hg38"
 
 # go to the root of snakemake pipeline
 
+# run first snakemake and make sure that files are not blocked
 snakemake -F --cores 4 \
 	--keep-going --rerun-incomplete --printshellcmds \
 	--config metafile=${meta} \
@@ -91,6 +92,7 @@ snakemake -F --cores 4 \
 	working_dir=${working_dir} \
 	project_name=${project_name} --unlock
 
+# the actual run
 snakemake -F --cores 4 \
         --keep-going --rerun-incomplete --printshellcmds \
         --config metafile=${meta} \
