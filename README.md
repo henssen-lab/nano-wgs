@@ -35,7 +35,7 @@ Set up your data as follows:
 
 To run the pipeline you need to include a `metadata.txt` file.<br/>
 If you have a multiplexed run then you need to include also a `barcodes.txt` file.<br/>
-For examples please check `backup_runs` folder.<br/>
+For examples please check `nano-wgs.snakejob.sh`.<br/>
 
 #### 3. Configuration file
 
