@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# metadata_12102021.txt
+# metadata.txt
 meta=$1
 header=`head -1 $meta`
 
