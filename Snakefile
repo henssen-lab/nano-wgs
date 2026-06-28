@@ -3,13 +3,18 @@ import os
 import pandas as pd
 from snakemake.utils import min_version
 
-min_version("6.4.1")
+# 7.32.4
+#min_version("6.4.1")
 
 configfile: "configs/config_run.yaml"
 
 HG19 = 'hg19'
 HG38 = 'hg38'
 T2T = 'T2T-CHM13'
+MM39 = 'mm39'
+MM39C = 'mm39+construct'
+
+genomes = [HG19,HG38,T2T,MM39,MM39C]
 
 REFERENCE = 'reference'
 THREADS = config["threads"]
@@ -21,6 +26,7 @@ WORKING_DIR = config['working_dir']
 METADATA_FILE = config['metafile']
 DEMUX_FILE = config['muxfile']
 TMP_DIR = config['tmp_dir']
+NAME_FASTQ_FOLDER = config['name_fastq_folder']
 HEADER_SUM = os.path.join(os.getcwd(),"envs/header_summary.txt")
 
 metadata = pd.read_csv(METADATA_FILE,sep="\t",header=0)
@@ -38,69 +44,65 @@ if len(DEMUX_FILE) > 0:
 	MUX = True
 
 runs = list(set(metadata.Run.tolist()))
-print(runs)
 samples = list(set(metadata.Sample.tolist()))
-print(samples)
 kit_dict = pd.Series(metadata.Kit.values,index=metadata.Run).to_dict()
 flowcell_dict = pd.Series(metadata.Flowcell.values,index=metadata.Run).to_dict()
 
-os.chdir(os.path.join(WORKING_DIR,PROJECT_NAME))
-print("current directory: ",os.getcwd())
+#os.chdir(os.path.join(WORKING_DIR,PROJECT_NAME))
+#print("current directory: ",os.getcwd())
 
 
 def get_reference(wildcards):
 	"""
 	Get reference genome
 	"""
-	if wildcards.refid == HG19:
-		return config[REFERENCE][HG19]
-	elif wildcards.refid == HG38:
-		return config[REFERENCE][HG38]
-	elif wildcards.refid == T2T:
-		return config[REFERENCE][T2T]
+	if wildcards.refid in genomes:
+		return config[REFERENCE][wildcards.refid]
 	else:
 		return None
-
 
 # include modules
 include: "rules/sv.smk"
 
 rule all:
 	input:
-		expand(["Process/{sample}/sequencing_summary.txt",
-		        "Process/{sample}/QC/NanoPlot-report.html",
-		        "Process/{sample}/filt.fastq",
-		        "Process/{sample}/{refid}/ngmlr_{refid}.bam",
-		        "Process/{sample}/{refid}/ngmlr_{refid}.bam.bai",
-		        "Process/{sample}/{refid}/ngmlr_{refid}.stats.txt",
-		        "Process/{sample}/{refid}/ngmlr_{refid}.sniffles.vcf",
-		        "Process/{sample}/{refid}/ngmlr_{refid}.sniffles.conf.vcf",
-		        "Process/{sample}/{refid}/ngmlr_{refid}.svim.vcf",
-		        "Process/{sample}/{refid}/coverage_{refid}.bw",
-		        "Process/{sample}/{refid}/ngmlr_{refid}.sniffles.bedpe",
-		        "Process/{sample}/{refid}/ngmlr_{refid}.sniffles.conf.bedpe",
-		        ],sample=samples,refid=REFS)
+		expand(["{workdir}/{project}/Process/{sample}/sequencing_summary.txt",
+		        "{workdir}/{project}/Process/{sample}/QC/NanoPlot-report.html",
+		        "{workdir}/{project}/Process/{sample}/filt.fastq",
+		        "{workdir}/{project}/Process/{sample}/{refid}/ngmlr_{refid}.bam",
+		        "{workdir}/{project}/Process/{sample}/{refid}/ngmlr_{refid}.bam.bai",
+		        "{workdir}/{project}/Process/{sample}/{refid}/ngmlr_{refid}.stats.txt",
+		        "{workdir}/{project}/Process/{sample}/{refid}/ngmlr_{refid}.sniffles.vcf",
+		        "{workdir}/{project}/Process/{sample}/{refid}/ngmlr_{refid}.sniffles.conf.vcf",
+		        "{workdir}/{project}/Process/{sample}/{refid}/ngmlr_{refid}.svim.vcf",
+		        "{workdir}/{project}/Process/{sample}/{refid}/coverage_{refid}.bw",
+		        "{workdir}/{project}/Process/{sample}/{refid}/ngmlr_{refid}.sniffles.bedpe",
+		        "{workdir}/{project}/Process/{sample}/{refid}/ngmlr_{refid}.sniffles.conf.bedpe",
+		        ],sample=samples,refid=REFS,workdir=WORKING_DIR,project=PROJECT_NAME)
 
 
 rule merge_fastq:
 	input:
-		fastq=lambda wildcards: ["{run}".format(run=row.Run) for index, row in
-		                         metadata[metadata.Sample == wildcards.sample].iterrows()],
+		fastq=lambda wildcards: ["{workdir}/{project}/{run}/{subdir}".format(workdir=wildcards.workdir,project=wildcards.project,run=row.Run,subdir=NAME_FASTQ_FOLDER)
+					for index, row in metadata[metadata.Sample == wildcards.sample].iterrows()],
 	output:
-		allfastq=temp("Process/{sample}/all.fastq"),
+		allfastq=temp("{workdir}/{project}/Process/{sample}/all.fastq"),
 	resources:
 		tmpdir=TMP_DIR
 	shell:
-		"""find {input.fastq} -name '*.fastq' | xargs cat > {output.allfastq}"""
+		"""
+		find {input.fastq} -name '*.fastq' -print0 | xargs -0 -r cat > {output.allfastq} && \
+		find {input.fastq} -name '*.fastq.gz' -print0 | xargs -0 -r zcat >> {output.allfastq}		   
+		"""
 
 # single sample
 if MUX == False:
 	rule merge_summary:
 		input:
-			sumfiles=lambda wildcards: ["{run}/sequencing_summary.txt".format(run=row.Run) for index, row in
+			sumfiles=lambda wildcards: ["{workdir}/{project}/{run}/sequencing_summary.txt".format(workdir=wildcards.workdir,project=wildcards.project,run=row.Run) for index, row in
 			                            metadata[metadata.Sample == wildcards.sample].iterrows()],
 		output:
-			seqsum="Process/{sample}/sequencing_summary.txt"
+			seqsum="{workdir}/{project}/Process/{sample}/sequencing_summary.txt"
 		resources:
 			tmpdir=TMP_DIR
 		params:
@@ -114,12 +116,12 @@ if MUX == False:
 else:
 	rule merge_summary:
 		input:
-			sumfiles=lambda wildcards: ["{run}/fastq/sequencing_summary.txt".format(run=row.RunRoot) for index, row in
+			sumfiles=lambda wildcards: ["{workdir}/{project}/{run}/sequencing_summary.txt".format(workdir=wildcards.workdir,project=wildcards.project,run=row.Run) for index, row in
 			                            metadata[metadata.Sample == wildcards.sample].iterrows()],
-			barcodesfile=lambda wildcards: ["{run}/demux/barcoding_summary.txt".format(run=row.RunRoot) for index, row
+			barcodesfile=lambda wildcards: ["{workdir}/{project}/{run}/barcoding_summary.txt".format(run=row.RunRoot) for index, row
 			                                in metadata[metadata.Sample == wildcards.sample].iterrows()]
 		output:
-			seqsum="Process/{sample}/sequencing_summary.txt"
+			seqsum="{workdir}/{project}/Process/{sample}/sequencing_summary.txt"
 		resources:
 			tmpdir=TMP_DIR
 		params:
@@ -137,24 +139,24 @@ else:
 
 rule nanoplot:
 	input:
-		"Process/{sample}/sequencing_summary.txt"
+		"{workdir}/{project}/Process/{sample}/sequencing_summary.txt"
 	output:
-		report="Process/{sample}/QC/NanoPlot-report.html"
+		report="{workdir}/{project}/Process/{sample}/QC/NanoPlot-report.html"
 	resources:
 		tmpdir=TMP_DIR
 	conda:
 		"envs/qc-env.yaml"
 	params:
 		sample="{sample}",
-		output_dir="Process/{sample}/QC",
+		output_dir="{workdir}/{project}/Process/{sample}/QC",
 	shell:
 		"NanoPlot --summary {input} --outdir {params.output_dir} --N50 --title {params.sample}"
 
 rule nanfilt:
 	input:
-		fastqin="Process/{sample}/all.fastq"
+		fastqin="{workdir}/{project}/Process/{sample}/all.fastq"
 	output:
-		fastqout=temp("Process/{sample}/filt.fastq")
+		fastqout=temp("{workdir}/{project}/Process/{sample}/filt.fastq")
 	resources:
 		tmpdir=TMP_DIR
 	conda:
@@ -166,10 +168,10 @@ rule nanfilt:
 
 rule ngmlr_mock:
 	input:
-		fastq="Process/{sample}/filt.fastq"
+		fastq="{workdir}/{project}/Process/{sample}/filt.fastq"
 	output:
-		# outf = directory(expand("Process/{sample}/{refid}/", sample=["{sample}"], refid=[HG19, HG38])),
-		outtemp=expand("Process/{sample}/{refid}/temp",sample=["{sample}"],refid=REFS)
+		# outf = directory(expand("{workdir}/{project}/Process/{sample}/{refid}/", sample=["{sample}"], refid=[HG19, HG38])),
+		outtemp=expand("{workdir}/{project}/Process/{sample}/{refid}/temp",sample=["{sample}"],workdir=["{workdir}"],project=["{project}"],refid=REFS)
 	resources:
 		tmpdir=TMP_DIR
 	conda:
@@ -179,13 +181,11 @@ rule ngmlr_mock:
 
 rule ngmlr:
 	input:
-		fastq="Process/{sample}/filt.fastq",
+		fastq="{workdir}/{project}/Process/{sample}/filt.fastq",
 		reference=get_reference,
-		ftemp="Process/{sample}/{refid}/temp"
+		ftemp="{workdir}/{project}/Process/{sample}/{refid}/temp"
 	output:
-		bam="Process/{sample}/{refid}/ngmlr_{refid}.bam",
-		bai="Process/{sample}/{refid}/ngmlr_{refid}.bam.bai",
-		sam=temp("Process/{sample}/{refid}/ngmlr_{refid}.sam")
+		sam="{workdir}/{project}/Process/{sample}/{refid}/ngmlr_{refid}.sam"
 	resources:
 		tmpdir=TMP_DIR
 	conda:
@@ -195,16 +195,28 @@ rule ngmlr:
 	shell:
 		"""
 		ngmlr --bam-fix --threads {params.threads} --reference {input.reference} --query {input.fastq} --output {output.sam} --presets ont
-		samtools sort -O BAM -o {output.bam} {output.sam}
-		samtools index {output.bam}
 		"""
+
+rule ngmlr_sort:
+	input:
+		sam="{workdir}/{project}/Process/{sample}/{refid}/ngmlr_{refid}.sam"
+	output:
+		bam="{workdir}/{project}/Process/{sample}/{refid}/ngmlr_{refid}.bam",
+                bai="{workdir}/{project}/Process/{sample}/{refid}/ngmlr_{refid}.bam.bai",
+	params:
+		threads=8
+	shell:
+		"""
+		samtools sort -@ {params.threads} -O BAM -o {output.bam} {input.sam}
+                samtools index {output.bam}
+                """
 
 rule coverage:
 	input:
-		bam="Process/{sample}/{refid}/ngmlr_{refid}.bam",
-		bai="Process/{sample}/{refid}/ngmlr_{refid}.bam.bai"
+		bam="{workdir}/{project}/Process/{sample}/{refid}/ngmlr_{refid}.bam",
+		bai="{workdir}/{project}/Process/{sample}/{refid}/ngmlr_{refid}.bam.bai"
 	output:
-		"Process/{sample}/{refid}/coverage_{refid}.bw"
+		"{workdir}/{project}/Process/{sample}/{refid}/coverage_{refid}.bw"
 	resources:
 		tmpdir=TMP_DIR
 	conda:
@@ -216,10 +228,10 @@ rule coverage:
 
 rule stats:
 	input:
-		bam="Process/{sample}/{refid}/ngmlr_{refid}.bam",
-		bai="Process/{sample}/{refid}/ngmlr_{refid}.bam.bai"
+		bam="{workdir}/{project}/Process/{sample}/{refid}/ngmlr_{refid}.bam",
+		bai="{workdir}/{project}/Process/{sample}/{refid}/ngmlr_{refid}.bam.bai"
 	output:
-		"Process/{sample}/{refid}/ngmlr_{refid}.stats.txt"
+		"{workdir}/{project}/Process/{sample}/{refid}/ngmlr_{refid}.stats.txt"
 	resources:
 		tmpdir=TMP_DIR
 	conda:

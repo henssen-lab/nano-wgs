@@ -2,17 +2,17 @@
 project_name: "Evolution"
 working_dir: "/fast/projects/NB_CircleSeq/work/CircleSeq_data/CircleSeq/Nanopore"
 tmp_dir: "/fast/users/giurgium_c/scratch"
-
-# GENERAL
-# GUPPY_BASECALLER : "/fast/users/helmsauk_c/work/ont-guppy-cpu/bin/guppy_basecaller"
+name_fastq_folder: "pass"
 
 refs: "hg19,hg38"
-threads: 8
+threads: 36
 
 reference: 
-  hg19:  "/fast/users/giurgium_c/work/assembly/SV/reference/hs37d5.fa"
-  hg38:  "/fast/users/giurgium_c/work/assembly/SV/reference/GRCh38.p13.genome.fa"
-  T2T-CHM13: "/fast/projects/NB_CircleSeq/work/CircleSeq_data/CircleSeq/Nanopore/Evolution/reference/GCA_009914755.4.fa"
+  hg19:  "/data/cephfs-2/unmirrored/projects/henssen-nanopore/reference/hs37d5.fa"
+  hg38:  "/data/cephfs-2/unmirrored/projects/henssen-nanopore/reference/GRCh38.primary_assembly.genome.fa"
+  T2T-CHM13: "/data/cephfs-2/unmirrored/projects/henssen-nanopore/reference/chm13v2.0.fa"
+  mm39+construct: "/data/cephfs-2/unmirrored/projects/henssen-nanopore/reference/GRCm39.primary_assembly.genome_chr12_12486093_13291919.fa"
+  mm39: "/data/cephfs-2/unmirrored/projects/henssen-nanopore/reference/reference/GRCm39.primary_assembly.genome.fa"
 
 # sample config
 metafile: "metadata.txt"
